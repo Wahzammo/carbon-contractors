@@ -1,36 +1,147 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Carbon Contractors
 
-## Getting Started
+Human-as-a-Service infrastructure for the agentic web. AI agents autonomously discover, hire, and pay human workers through a standardised MCP interface, with payments settled in USDC on Base.
 
-First, run the development server:
+## What this is
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+Large language models can already write code, analyse data, and generate content. What they can't do is the physical, subjective, or trust-dependent work that still requires a human. Carbon Contractors bridges that gap.
+
+Workers register their skills and hourly rates on-chain. AI agents query the worker registry via MCP (Model Context Protocol), select a worker, and lock USDC in escrow. When the task is done, funds release automatically. No platform middleman, no invoicing, no accounts payable.
+
+The trust layer is reputation staking — workers put skin in the game, and their track record is public and verifiable. No KYC, no resumes, no interviews. Just wallets, skills, and outcomes.
+
+## Architecture
+
+```
+AI Agent (Claude, GPT, etc.)
+    │
+    ▼
+MCP Client ──── JSON-RPC / SSE ────► /api/mcp
+                                        │
+                            ┌───────────┼───────────┐
+                            ▼           ▼           ▼
+                     search_whitepages  │   human_whitepages
+                                        │   (resource)
+                                request_human_work
+                                        │
+                                        ▼
+                                 x402 Escrow (Base L2)
+                                        │
+                                        ▼
+                                  USDC Settlement
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+**MCP Tools:**
+- `search_whitepages` — Query workers by skill, ranked by reputation
+- `request_human_work` — Lock USDC in escrow to hire a worker
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+**MCP Resource:**
+- `human_whitepages` — Full worker directory as structured JSON
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The server speaks Streamable HTTP (SSE), not WebSocket. Any MCP-compatible client can connect — no custom SDK required.
 
-## Learn More
+## Stack
 
-To learn more about Next.js, take a look at the following resources:
+| Layer | Technology |
+|-------|-----------|
+| Framework | Next.js 16 (App Router) |
+| Protocol | MCP over HTTP + SSE |
+| Database | Supabase (Postgres) |
+| Chain | Base L2 |
+| Payments | USDC via x402 protocol |
+| Identity | Coinbase Smart Wallet (passkeys, no seed phrases) |
+| Agent SDK | Coinbase AgentKit |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Running it locally
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+git clone https://github.com/Wahzammo/carbon-contractors.git
+cd carbon-contractors
+npm install
+```
 
-## Deploy on Vercel
+Create `.env.local` from the template:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+cp .env.example .env.local
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Fill in your Supabase credentials (free tier works):
+
+```
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your-anon-key
+```
+
+Create the database tables by running `supabase/migrations/001_init.sql` in your Supabase SQL Editor, then seed the dev data:
+
+```bash
+npm run seed
+npm run dev
+```
+
+The MCP endpoint is live at `http://localhost:3000/api/mcp`. Health check at `/api/health`.
+
+## Testing the MCP server
+
+Initialise a session:
+
+```bash
+curl -X POST http://localhost:3000/api/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "initialize",
+    "params": {
+      "protocolVersion": "2025-03-26",
+      "capabilities": {},
+      "clientInfo": {"name": "test", "version": "1.0.0"}
+    }
+  }'
+```
+
+Search for workers (use the `mcp-session-id` from the response headers):
+
+```bash
+curl -X POST http://localhost:3000/api/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -H "mcp-session-id: YOUR_SESSION_ID" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "tools/call",
+    "params": {
+      "name": "search_whitepages",
+      "arguments": {"skill": "solidity"}
+    }
+  }'
+```
+
+## Project status
+
+- [x] MCP server with Streamable HTTP transport
+- [x] Worker registry backed by Postgres (Supabase)
+- [x] Skill search with reputation ranking
+- [x] Task creation with payment persistence
+- [x] Structured logging (Wazuh-compatible)
+- [ ] Coinbase Smart Wallet integration (passkey auth)
+- [ ] Worker self-registration flow
+- [ ] On-chain USDC escrow contracts
+- [ ] x402 payment protocol (live transactions)
+- [ ] AgentKit autonomous agent wallets
+- [ ] Reputation staking
+- [ ] Task attestation and completion flow
+
+## Design constraints
+
+- **Zero PII** — no personal data stored, ever. Wallets and skills only.
+- **Passkeys only** — no seed phrases, no SMS OTP. WebAuthn or nothing.
+- **Escrow everything** — every task is wrapped in a smart contract. No trust required.
+- **MCP-native** — any LLM with an MCP client can hire humans. No proprietary API.
+
+## License
+
+MIT
