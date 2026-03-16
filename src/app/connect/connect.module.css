@@ -1,0 +1,154 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-geist-sans);
+  background: #0a0a0a;
+  color: #ededed;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  border-bottom: 1px solid #222;
+}
+
+.title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  padding: 3rem 2rem;
+}
+
+.hero {
+  max-width: 480px;
+  text-align: center;
+}
+
+.hero h2 {
+  font-size: 1.8rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.hero p {
+  color: #888;
+  line-height: 1.6;
+  margin-bottom: 0.75rem;
+}
+
+.subtle {
+  font-size: 0.85rem;
+  color: #555;
+}
+
+.mono {
+  font-family: var(--font-geist-mono);
+  font-size: 0.8rem;
+  color: #0052ff;
+  word-break: break-all;
+}
+
+.form {
+  max-width: 520px;
+  width: 100%;
+}
+
+.form h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-top: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.form h2:first-child {
+  margin-top: 0;
+}
+
+.form p {
+  color: #888;
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.skill {
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  border: 1px solid #333;
+  background: transparent;
+  color: #aaa;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.skill:hover {
+  border-color: #555;
+  color: #ededed;
+}
+
+.skillActive {
+  background: #0052ff;
+  border-color: #0052ff;
+  color: #fff;
+}
+
+.input {
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  border-radius: 6px;
+  border: 1px solid #333;
+  background: #111;
+  color: #ededed;
+  font-size: 0.9rem;
+  font-family: var(--font-geist-mono);
+  outline: none;
+  margin-bottom: 1.5rem;
+}
+
+.input:focus {
+  border-color: #0052ff;
+}
+
+.register {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: none;
+  background: #0052ff;
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.register:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.register:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.error {
+  color: #ff4444;
+  font-size: 0.85rem;
+  margin-top: 1rem;
+}
