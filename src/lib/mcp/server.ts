@@ -34,7 +34,7 @@ export function createMcpServer(): McpServer {
         ),
     },
     async ({ skill }) => {
-      const results = searchBySkill(skill);
+      const results = await searchBySkill(skill);
 
       if (results.length === 0) {
         return {
@@ -155,7 +155,7 @@ export function createMcpServer(): McpServer {
       mimeType: "application/json",
     },
     async () => {
-      const all = getAllHumans();
+      const all = await getAllHumans();
       return {
         contents: [
           {
