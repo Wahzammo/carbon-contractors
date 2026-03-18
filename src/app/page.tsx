@@ -40,20 +40,44 @@ export default function Home() {
         AI agents discover, hire, and pay human workers through MCP. Payments in
         USDC on Base. No middleman.
       </p>
-      <Link
-        href="/connect"
+      <div
         style={{
-          padding: "0.75rem 2rem",
-          borderRadius: "8px",
-          background: "#0052ff",
-          color: "#fff",
-          textDecoration: "none",
-          fontWeight: 600,
-          fontSize: "0.95rem",
+          display: "flex",
+          gap: "1rem",
+          flexWrap: "wrap",
+          justifyContent: "center",
         }}
       >
-        Register as a Worker
-      </Link>
+        <Link
+          href="/connect"
+          style={{
+            padding: "0.75rem 2rem",
+            borderRadius: "8px",
+            background: "#0052ff",
+            color: "#fff",
+            textDecoration: "none",
+            fontWeight: 600,
+            fontSize: "0.95rem",
+          }}
+        >
+          Register as a Worker
+        </Link>
+        <Link
+          href="/dashboard"
+          style={{
+            padding: "0.75rem 2rem",
+            borderRadius: "8px",
+            background: "transparent",
+            border: "1px solid #333",
+            color: "#ededed",
+            textDecoration: "none",
+            fontWeight: 600,
+            fontSize: "0.95rem",
+          }}
+        >
+          Worker Dashboard
+        </Link>
+      </div>
       <div
         style={{
           marginTop: "3rem",
@@ -62,11 +86,17 @@ export default function Home() {
           fontSize: "0.8rem",
         }}
       >
-        <p>MCP Endpoint</p>
+        <Link
+          href="/mcp-info"
+          style={{ color: "#0052ff", textDecoration: "none" }}
+        >
+          MCP Server Info
+        </Link>
+        <span style={{ margin: "0 0.75rem" }}>|</span>
         <code
           style={{
             fontFamily: "var(--font-geist-mono)",
-            color: "#0052ff",
+            color: "#666",
           }}
         >
           /api/mcp

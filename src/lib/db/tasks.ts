@@ -84,3 +84,18 @@ export async function updateTaskStatus(
 
   if (error) throw new Error(`updateTaskStatus failed: ${error.message}`);
 }
+
+export async function getTasksByWallet(
+  wallet: string,
+): Promise<TaskRecord[]> {
+  const supabase = getSupabase();
+
+  const { data, error } = await supabase
+    .from("tasks")
+    .select()
+    .eq("to_human_wallet", wallet)
+    .order("created_at", { ascending: false });
+
+  if (error) throw new Error(`getTasksByWallet failed: ${error.message}`);
+  return (data as TaskRecord[]) ?? [];
+}

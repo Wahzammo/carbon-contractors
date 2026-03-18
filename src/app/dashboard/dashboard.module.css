@@ -1,0 +1,180 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-geist-sans);
+  background: #0a0a0a;
+  color: #ededed;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  border-bottom: 1px solid #222;
+}
+
+.title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  text-decoration: none;
+  color: #ededed;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+  max-width: 720px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.hero {
+  max-width: 480px;
+  text-align: center;
+  margin-top: 4rem;
+}
+
+.hero h2 {
+  font-size: 1.8rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.hero p {
+  color: #888;
+  line-height: 1.6;
+  margin-bottom: 0.75rem;
+}
+
+.pageTitle {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  align-self: flex-start;
+}
+
+.loading {
+  color: #888;
+  margin-top: 2rem;
+}
+
+.emptyState {
+  text-align: center;
+  color: #888;
+  margin-top: 3rem;
+  line-height: 1.6;
+}
+
+.emptyState a {
+  color: #0052ff;
+  text-decoration: none;
+}
+
+.emptyState a:hover {
+  text-decoration: underline;
+}
+
+.taskList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+}
+
+.taskCard {
+  border: 1px solid #222;
+  border-radius: 8px;
+  padding: 1.25rem;
+  transition: border-color 0.15s;
+}
+
+.taskCard:hover {
+  border-color: #333;
+}
+
+.taskHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.statusBadge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+}
+
+.statusPending {
+  background: #3d3200;
+  color: #fbbf24;
+}
+
+.statusActive {
+  background: #001a4d;
+  color: #0052ff;
+}
+
+.statusCompleted {
+  background: #003d1a;
+  color: #22c55e;
+}
+
+.statusDisputed {
+  background: #3d0000;
+  color: #ff4444;
+}
+
+.statusExpired {
+  background: #222;
+  color: #888;
+}
+
+.amount {
+  font-family: var(--font-geist-mono);
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0052ff;
+}
+
+.description {
+  color: #ccc;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin-bottom: 0.75rem;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.78rem;
+  color: #666;
+}
+
+.metaLabel {
+  color: #555;
+}
+
+.metaValue {
+  font-family: var(--font-geist-mono);
+  color: #888;
+}
+
+.onChainBadge {
+  font-size: 0.7rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+  background: #1a1a2e;
+  color: #7c6fff;
+  font-family: var(--font-geist-mono);
+}
