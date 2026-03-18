@@ -1,8 +1,8 @@
 {
   "mcpServers": {
-    "carbon-contractors": {
+    "basedhuman": {
       "type": "streamable-http",
-      "url": "http://localhost:3000/api/mcp"
+      "url": "http://localhost:3000/api/basedhuman.mcp"
     }
   }
 }

@@ -99,7 +99,7 @@ export default function Home() {
             color: "#666",
           }}
         >
-          /api/mcp
+          /api/basedhuman.mcp
         </code>
       </div>
     </div>

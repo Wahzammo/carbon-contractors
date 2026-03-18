@@ -1,5 +1,5 @@
 /**
- * route.ts — /api/mcp (GET + POST + DELETE)
+ * route.ts — /api/basedhuman.mcp (GET + POST + DELETE)
  *
  * Single endpoint for the MCP Streamable HTTP transport (Web Standards).
  * - GET  → opens an SSE stream for server-initiated notifications

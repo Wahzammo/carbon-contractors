@@ -91,7 +91,7 @@ export default function McpInfoPage() {
         <div className={styles.endpoint}>
           <div>
             <div className={styles.endpointLabel}>Endpoint</div>
-            <div className={styles.endpointUrl}>/api/mcp</div>
+            <div className={styles.endpointUrl}>/api/basedhuman.mcp</div>
           </div>
         </div>
 
