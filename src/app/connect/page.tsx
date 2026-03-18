@@ -9,6 +9,7 @@ import {
   WalletDropdownDisconnect,
 } from "@coinbase/onchainkit/wallet";
 import { Address, Avatar, Name, Identity } from "@coinbase/onchainkit/identity";
+import Link from "next/link";
 import styles from "./connect.module.css";
 
 const AVAILABLE_SKILLS = [
@@ -89,7 +90,7 @@ export default function ConnectPage() {
   return (
     <div className={styles.page}>
       <header className={styles.header}>
-        <h1 className={styles.title}>Carbon Contractors</h1>
+        <Link href="/" className={styles.title}>Carbon Contractors</Link>
         <Wallet>
           <ConnectWallet />
           <WalletDropdown>
