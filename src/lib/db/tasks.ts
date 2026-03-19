@@ -102,7 +102,6 @@ export async function getTasksByWallet(
 
 export interface ReputationSummary {
   wallet: string;
-  reputation_score: number;
   total_tasks: number;
   completed: number;
   disputed: number;
@@ -110,6 +109,8 @@ export interface ReputationSummary {
   active: number;
   pending: number;
   total_earned_usdc: number;
+  recentCompletions: number; // completed in last 30 days
+  midCompletions: number; // completed 30-90 days ago
 }
 
 export async function getReputationSummary(
@@ -117,9 +118,12 @@ export async function getReputationSummary(
 ): Promise<ReputationSummary> {
   const tasks = await getTasksByWallet(wallet);
 
+  const now = Date.now();
+  const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+  const ninetyDaysMs = 90 * 24 * 60 * 60 * 1000;
+
   const summary: ReputationSummary = {
     wallet,
-    reputation_score: 0,
     total_tasks: tasks.length,
     completed: 0,
     disputed: 0,
@@ -127,14 +131,23 @@ export async function getReputationSummary(
     active: 0,
     pending: 0,
     total_earned_usdc: 0,
+    recentCompletions: 0,
+    midCompletions: 0,
   };
 
   for (const t of tasks) {
     switch (t.status) {
-      case "completed":
+      case "completed": {
         summary.completed++;
         summary.total_earned_usdc += t.amount_usdc;
+        const age = now - new Date(t.created_at).getTime();
+        if (age <= thirtyDaysMs) {
+          summary.recentCompletions++;
+        } else if (age <= ninetyDaysMs) {
+          summary.midCompletions++;
+        }
         break;
+      }
       case "disputed":
         summary.disputed++;
         break;

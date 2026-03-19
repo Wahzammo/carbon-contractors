@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useAccount } from "wagmi";
+import { useEffect, useState, useCallback } from "react";
+import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import {
   ConnectWallet,
   Wallet,
@@ -11,6 +11,45 @@ import {
 import { Address, Avatar, Name, Identity } from "@coinbase/onchainkit/identity";
 import Link from "next/link";
 import styles from "./dashboard.module.css";
+
+// ── ABIs for write operations ───────────────────────────────────────────────
+
+const ERC20_APPROVE_ABI = [
+  {
+    type: "function",
+    name: "approve",
+    inputs: [
+      { name: "spender", type: "address" },
+      { name: "amount", type: "uint256" },
+    ],
+    outputs: [{ name: "", type: "bool" }],
+    stateMutability: "nonpayable",
+  },
+] as const;
+
+const STAKE_ABI = [
+  {
+    type: "function",
+    name: "stake",
+    inputs: [{ name: "amount", type: "uint256" }],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "unstake",
+    inputs: [{ name: "amount", type: "uint256" }],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+] as const;
+
+// ── USDC on Base Sepolia ────────────────────────────────────────────────────
+
+const USDC_ADDRESS = "0x036CbD53842c5426634e7929541eC2318f3dCF7e";
+const USDC_DECIMALS = 6;
+
+// ── Types ───────────────────────────────────────────────────────────────────
 
 interface OnChainState {
   state: string;
@@ -31,6 +70,33 @@ interface Task {
   escrow_contract: string | null;
   created_at: string;
   on_chain: OnChainState | null;
+}
+
+interface ReputationBreakdown {
+  completion: number;
+  volume: number;
+  recency: number;
+  stake: number;
+  total: number;
+}
+
+interface Reputation {
+  wallet: string;
+  score: number;
+  breakdown: ReputationBreakdown;
+  tasks: {
+    total: number;
+    completed: number;
+    disputed: number;
+    total_earned_usdc: number;
+    completion_rate: number | null;
+  };
+  stake: {
+    amount_usdc: number;
+    staked_at: number;
+    slashed_total_usdc: number;
+    contract: string | null;
+  };
 }
 
 function truncateAddress(addr: string): string {
@@ -68,30 +134,106 @@ function statusClass(status: string): string {
 export default function DashboardPage() {
   const { address, isConnected } = useAccount();
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [reputation, setReputation] = useState<Reputation | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [stakeInput, setStakeInput] = useState("");
+  const [unstakeInput, setUnstakeInput] = useState("");
+  const [stakeStep, setStakeStep] = useState<"idle" | "approving" | "staking" | "unstaking">("idle");
 
-  useEffect(() => {
+  const { writeContract, data: txHash } = useWriteContract();
+  const { isSuccess: txConfirmed } = useWaitForTransactionReceipt({ hash: txHash });
+
+  const stakeContractAddress = reputation?.stake?.contract as `0x${string}` | undefined;
+
+  const fetchData = useCallback(() => {
     if (!isConnected || !address) {
       setTasks([]);
+      setReputation(null);
       return;
     }
 
     setLoading(true);
     setError("");
 
-    fetch(`/api/tasks?wallet=${address}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.ok) {
-          setTasks(data.tasks);
-        } else {
-          setError(data.error || "Failed to fetch tasks");
+    Promise.all([
+      fetch(`/api/tasks?wallet=${address}`).then((r) => r.json()),
+      fetch(`/api/reputation?wallet=${address}`).then((r) => r.json()),
+    ])
+      .then(([tasksData, repData]) => {
+        if (tasksData.ok) setTasks(tasksData.tasks);
+        if (repData.ok) setReputation(repData.reputation);
+        if (!tasksData.ok && !repData.ok) {
+          setError("Failed to fetch data");
         }
       })
       .catch(() => setError("Network error"))
       .finally(() => setLoading(false));
   }, [isConnected, address]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // Refresh after tx confirms
+  useEffect(() => {
+    if (txConfirmed) {
+      setStakeStep("idle");
+      setStakeInput("");
+      setUnstakeInput("");
+      fetchData();
+    }
+  }, [txConfirmed, fetchData]);
+
+  function handleStake() {
+    if (!stakeContractAddress || !stakeInput) return;
+    const amountWei = BigInt(Math.round(parseFloat(stakeInput) * 10 ** USDC_DECIMALS));
+
+    if (stakeStep === "idle") {
+      // Step 1: Approve USDC
+      setStakeStep("approving");
+      writeContract({
+        address: USDC_ADDRESS as `0x${string}`,
+        abi: ERC20_APPROVE_ABI,
+        functionName: "approve",
+        args: [stakeContractAddress, amountWei],
+      });
+    }
+  }
+
+  // After approval confirmed, do the actual stake
+  useEffect(() => {
+    if (txConfirmed && stakeStep === "approving" && stakeContractAddress && stakeInput) {
+      const amountWei = BigInt(Math.round(parseFloat(stakeInput) * 10 ** USDC_DECIMALS));
+      setStakeStep("staking");
+      writeContract({
+        address: stakeContractAddress,
+        abi: STAKE_ABI,
+        functionName: "stake",
+        args: [amountWei],
+      });
+    }
+  }, [txConfirmed, stakeStep, stakeContractAddress, stakeInput, writeContract]);
+
+  function handleUnstake() {
+    if (!stakeContractAddress || !unstakeInput) return;
+    const amountWei = BigInt(Math.round(parseFloat(unstakeInput) * 10 ** USDC_DECIMALS));
+    setStakeStep("unstaking");
+    writeContract({
+      address: stakeContractAddress,
+      abi: STAKE_ABI,
+      functionName: "unstake",
+      args: [amountWei],
+    });
+  }
+
+  const cooldownReady = reputation?.stake?.staked_at
+    ? reputation.stake.staked_at + 7 * 24 * 3600 <= Date.now() / 1000
+    : true;
+
+  const cooldownDate = reputation?.stake?.staked_at
+    ? new Date((reputation.stake.staked_at + 7 * 24 * 3600) * 1000)
+    : null;
 
   return (
     <div className={styles.page}>
@@ -122,11 +264,138 @@ export default function DashboardPage() {
           </div>
         ) : (
           <>
-            <h2 className={styles.pageTitle}>Your Tasks</h2>
-
-            {loading && <p className={styles.loading}>Loading tasks...</p>}
-
+            {loading && <p className={styles.loading}>Loading...</p>}
             {error && <p style={{ color: "#ff4444" }}>{error}</p>}
+
+            {/* ── Reputation + Staking ────────────────────────────────── */}
+            {reputation && (
+              <div className={styles.reputationRow}>
+                <div className={styles.reputationCard}>
+                  <div className={styles.scoreDisplay}>
+                    <span className={styles.scoreNumber}>
+                      {reputation.score}
+                    </span>
+                    <span className={styles.scoreLabel}>Reputation</span>
+                  </div>
+                  <div className={styles.breakdownGrid}>
+                    <div className={styles.breakdownItem}>
+                      <span className={styles.breakdownValue}>
+                        {reputation.breakdown.completion}
+                      </span>
+                      <span className={styles.breakdownLabel}>Completion</span>
+                    </div>
+                    <div className={styles.breakdownItem}>
+                      <span className={styles.breakdownValue}>
+                        {reputation.breakdown.volume}
+                      </span>
+                      <span className={styles.breakdownLabel}>Volume</span>
+                    </div>
+                    <div className={styles.breakdownItem}>
+                      <span className={styles.breakdownValue}>
+                        {reputation.breakdown.recency}
+                      </span>
+                      <span className={styles.breakdownLabel}>Recency</span>
+                    </div>
+                    <div className={styles.breakdownItem}>
+                      <span className={styles.breakdownValue}>
+                        {reputation.breakdown.stake}
+                      </span>
+                      <span className={styles.breakdownLabel}>Stake</span>
+                    </div>
+                  </div>
+                  <div className={styles.reputationStats}>
+                    <span>{reputation.tasks.completed} completed</span>
+                    <span>{reputation.tasks.total_earned_usdc} USDC earned</span>
+                    {reputation.tasks.completion_rate !== null && (
+                      <span>{reputation.tasks.completion_rate}% rate</span>
+                    )}
+                  </div>
+                </div>
+
+                {stakeContractAddress && (
+                  <div className={styles.stakePanel}>
+                    <h3 className={styles.stakePanelTitle}>USDC Stake</h3>
+                    <div className={styles.stakeAmount}>
+                      {reputation.stake.amount_usdc} USDC
+                    </div>
+                    {reputation.stake.slashed_total_usdc > 0 && (
+                      <div className={styles.slashedNote}>
+                        {reputation.stake.slashed_total_usdc} USDC slashed
+                      </div>
+                    )}
+
+                    <div className={styles.stakeActions}>
+                      <div className={styles.stakeInputGroup}>
+                        <input
+                          type="number"
+                          placeholder="Amount (min 20)"
+                          value={stakeInput}
+                          onChange={(e) => setStakeInput(e.target.value)}
+                          className={styles.stakeInput}
+                          min="20"
+                          step="1"
+                        />
+                        <button
+                          onClick={handleStake}
+                          disabled={
+                            stakeStep !== "idle" || !stakeInput || parseFloat(stakeInput) < 20
+                          }
+                          className={styles.stakeBtn}
+                        >
+                          {stakeStep === "approving"
+                            ? "Approving..."
+                            : stakeStep === "staking"
+                              ? "Staking..."
+                              : "Stake"}
+                        </button>
+                      </div>
+
+                      {reputation.stake.amount_usdc > 0 && (
+                        <div className={styles.stakeInputGroup}>
+                          <input
+                            type="number"
+                            placeholder="Amount to unstake"
+                            value={unstakeInput}
+                            onChange={(e) => setUnstakeInput(e.target.value)}
+                            className={styles.stakeInput}
+                            max={reputation.stake.amount_usdc}
+                            step="1"
+                          />
+                          <button
+                            onClick={handleUnstake}
+                            disabled={
+                              stakeStep !== "idle" ||
+                              !unstakeInput ||
+                              !cooldownReady
+                            }
+                            className={styles.unstakeBtn}
+                          >
+                            {stakeStep === "unstaking"
+                              ? "Unstaking..."
+                              : "Unstake"}
+                          </button>
+                        </div>
+                      )}
+
+                      {!cooldownReady && cooldownDate && (
+                        <p className={styles.cooldownNote}>
+                          Cooldown until{" "}
+                          {cooldownDate.toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── Tasks ──────────────────────────────────────────────── */}
+            <h2 className={styles.pageTitle}>Your Tasks</h2>
 
             {!loading && !error && tasks.length === 0 && (
               <div className={styles.emptyState}>

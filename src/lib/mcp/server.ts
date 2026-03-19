@@ -18,8 +18,8 @@ import { initiateX402Payment } from "@/lib/payments/x402";
 import {
   getTaskByPaymentId,
   updateTaskStatus,
-  getReputationSummary,
 } from "@/lib/db/tasks";
+import { getFullReputation } from "@/lib/reputation";
 import {
   registerNotificationChannel,
   getChannelsForContractor,
@@ -29,6 +29,7 @@ import {
   getEscrowConfig,
   TaskStateEnum,
 } from "@/lib/contracts/escrow";
+import { getReputationStakeConfig } from "@/lib/contracts/reputation";
 import { log } from "@/lib/logging";
 
 /**
@@ -528,7 +529,7 @@ export function createMcpServer(): McpServer {
   // ─── Tool: get_reputation ──────────────────────────────────────────────
   server.tool(
     "get_reputation",
-    "Get a contractor's reputation score and task history summary. Returns on-chain reputation score, completed/disputed/expired task counts, and total USDC earned.",
+    "Get a contractor's computed reputation score (0-100), task history, USDC stake amount, and score breakdown (completion/volume/recency/stake components).",
     {
       wallet: z
         .string()
@@ -537,12 +538,7 @@ export function createMcpServer(): McpServer {
     },
     async ({ wallet }) => {
       try {
-        const human = await getHumanByWallet(wallet);
-        const reputation = await getReputationSummary(wallet);
-
-        if (human) {
-          reputation.reputation_score = human.reputation_score;
-        }
+        const reputation = await getFullReputation(wallet);
 
         return {
           content: [
@@ -550,15 +546,7 @@ export function createMcpServer(): McpServer {
               type: "text" as const,
               text: JSON.stringify({
                 ok: true,
-                reputation: {
-                  ...reputation,
-                  completion_rate:
-                    reputation.total_tasks > 0
-                      ? Math.round(
-                          (reputation.completed / reputation.total_tasks) * 100
-                        )
-                      : null,
-                },
+                reputation,
               }),
             },
           ],
@@ -624,6 +612,32 @@ export function createMcpServer(): McpServer {
             text: JSON.stringify({
               protocol: "base-human-mcp/1.0",
               escrow: config,
+            }),
+          },
+        ],
+      };
+    }
+  );
+
+  // ─── Resource: reputation_stake_config ────────────────────────────────────
+  server.resource(
+    "reputation_stake_config",
+    "base-human://reputation/config",
+    {
+      description:
+        "Reputation staking contract address, minimum stake, and cooldown period.",
+      mimeType: "application/json",
+    },
+    async () => {
+      const config = getReputationStakeConfig();
+      return {
+        contents: [
+          {
+            uri: "base-human://reputation/config",
+            mimeType: "application/json",
+            text: JSON.stringify({
+              protocol: "base-human-mcp/1.0",
+              reputation_stake: config,
             }),
           },
         ],
