@@ -7,9 +7,19 @@
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { searchBySkill, getAllHumans } from "@/lib/db/whitepages";
+import {
+  searchBySkill,
+  getAllHumans,
+  getHumanByWallet,
+  getHumanById,
+  getDistinctSkills,
+} from "@/lib/db/whitepages";
 import { initiateX402Payment } from "@/lib/payments/x402";
-import { getTaskByPaymentId, updateTaskStatus } from "@/lib/db/tasks";
+import {
+  getTaskByPaymentId,
+  updateTaskStatus,
+  getReputationSummary,
+} from "@/lib/db/tasks";
 import {
   registerNotificationChannel,
   getChannelsForContractor,
@@ -367,6 +377,187 @@ export function createMcpServer(): McpServer {
                   type: channel.type,
                   address: channel.address,
                   accepts_auto_booking: channel.accepts_auto_booking,
+                },
+              }),
+            },
+          ],
+        };
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        return {
+          isError: true,
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify({ ok: false, error: message }),
+            },
+          ],
+        };
+      }
+    }
+  );
+
+  // ─── Tool: get_contractor ────────────────────────────────────────────────
+  server.tool(
+    "get_contractor",
+    "Look up a single contractor's full profile by wallet address or UUID. Returns skills, rate, availability, reputation score, and notification channels.",
+    {
+      wallet: z
+        .string()
+        .optional()
+        .describe("Contractor's 0x wallet address"),
+      id: z
+        .string()
+        .uuid()
+        .optional()
+        .describe("Contractor's UUID from the humans table"),
+    },
+    async ({ wallet, id }) => {
+      try {
+        if (!wallet && !id) {
+          return {
+            isError: true,
+            content: [
+              {
+                type: "text" as const,
+                text: JSON.stringify({
+                  ok: false,
+                  error: "Provide either wallet or id",
+                }),
+              },
+            ],
+          };
+        }
+
+        const human = wallet
+          ? await getHumanByWallet(wallet)
+          : await getHumanById(id!);
+
+        if (!human) {
+          return {
+            isError: true,
+            content: [
+              {
+                type: "text" as const,
+                text: JSON.stringify({
+                  ok: false,
+                  error: "Contractor not found",
+                }),
+              },
+            ],
+          };
+        }
+
+        const channels = await getChannelsForContractor(human.id);
+
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify({
+                ok: true,
+                contractor: {
+                  id: human.id,
+                  wallet: human.wallet,
+                  skills: human.skills,
+                  rate_usdc: human.rate_usdc,
+                  availability: human.availability,
+                  reputation_score: human.reputation_score,
+                  accepts_auto_booking: channels.some(
+                    (c) => c.accepts_auto_booking
+                  ),
+                  notification_channels: channels.map((c) => ({
+                    type: c.type,
+                    accepts_auto_booking: c.accepts_auto_booking,
+                  })),
+                },
+              }),
+            },
+          ],
+        };
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        return {
+          isError: true,
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify({ ok: false, error: message }),
+            },
+          ],
+        };
+      }
+    }
+  );
+
+  // ─── Tool: list_skills ─────────────────────────────────────────────────
+  server.tool(
+    "list_skills",
+    "Returns the canonical skill taxonomy — all unique skills registered by contractors on the platform. Use this to discover valid skill slugs before calling search_whitepages.",
+    {},
+    async () => {
+      try {
+        const skills = await getDistinctSkills();
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify({
+                ok: true,
+                count: skills.length,
+                skills,
+              }),
+            },
+          ],
+        };
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        return {
+          isError: true,
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify({ ok: false, error: message }),
+            },
+          ],
+        };
+      }
+    }
+  );
+
+  // ─── Tool: get_reputation ──────────────────────────────────────────────
+  server.tool(
+    "get_reputation",
+    "Get a contractor's reputation score and task history summary. Returns on-chain reputation score, completed/disputed/expired task counts, and total USDC earned.",
+    {
+      wallet: z
+        .string()
+        .regex(/^0x[0-9a-fA-F]{40}$/)
+        .describe("Contractor's Base wallet address"),
+    },
+    async ({ wallet }) => {
+      try {
+        const human = await getHumanByWallet(wallet);
+        const reputation = await getReputationSummary(wallet);
+
+        if (human) {
+          reputation.reputation_score = human.reputation_score;
+        }
+
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify({
+                ok: true,
+                reputation: {
+                  ...reputation,
+                  completion_rate:
+                    reputation.total_tasks > 0
+                      ? Math.round(
+                          (reputation.completed / reputation.total_tasks) * 100
+                        )
+                      : null,
                 },
               }),
             },

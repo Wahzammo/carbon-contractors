@@ -99,3 +99,56 @@ export async function getTasksByWallet(
   if (error) throw new Error(`getTasksByWallet failed: ${error.message}`);
   return (data as TaskRecord[]) ?? [];
 }
+
+export interface ReputationSummary {
+  wallet: string;
+  reputation_score: number;
+  total_tasks: number;
+  completed: number;
+  disputed: number;
+  expired: number;
+  active: number;
+  pending: number;
+  total_earned_usdc: number;
+}
+
+export async function getReputationSummary(
+  wallet: string,
+): Promise<ReputationSummary> {
+  const tasks = await getTasksByWallet(wallet);
+
+  const summary: ReputationSummary = {
+    wallet,
+    reputation_score: 0,
+    total_tasks: tasks.length,
+    completed: 0,
+    disputed: 0,
+    expired: 0,
+    active: 0,
+    pending: 0,
+    total_earned_usdc: 0,
+  };
+
+  for (const t of tasks) {
+    switch (t.status) {
+      case "completed":
+        summary.completed++;
+        summary.total_earned_usdc += t.amount_usdc;
+        break;
+      case "disputed":
+        summary.disputed++;
+        break;
+      case "expired":
+        summary.expired++;
+        break;
+      case "active":
+        summary.active++;
+        break;
+      case "pending":
+        summary.pending++;
+        break;
+    }
+  }
+
+  return summary;
+}

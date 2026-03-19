@@ -36,6 +36,70 @@ export async function searchBySkill(skill: string): Promise<HumanRecord[]> {
 }
 
 /**
+ * getHumanByWallet
+ * Returns a single contractor by wallet address, or null if not found.
+ */
+export async function getHumanByWallet(
+  wallet: string
+): Promise<(HumanRecord & { id: string }) | null> {
+  const supabase = getSupabase();
+
+  const { data, error } = await supabase
+    .from("humans")
+    .select("id, wallet, skills, rate_usdc, availability, reputation_score")
+    .eq("wallet", wallet.toLowerCase())
+    .single();
+
+  if (error && error.code !== "PGRST116") {
+    throw new Error(`getHumanByWallet failed: ${error.message}`);
+  }
+  return (data as (HumanRecord & { id: string })) ?? null;
+}
+
+/**
+ * getHumanById
+ * Returns a single contractor by UUID, or null if not found.
+ */
+export async function getHumanById(
+  id: string
+): Promise<(HumanRecord & { id: string }) | null> {
+  const supabase = getSupabase();
+
+  const { data, error } = await supabase
+    .from("humans")
+    .select("id, wallet, skills, rate_usdc, availability, reputation_score")
+    .eq("id", id)
+    .single();
+
+  if (error && error.code !== "PGRST116") {
+    throw new Error(`getHumanById failed: ${error.message}`);
+  }
+  return (data as (HumanRecord & { id: string })) ?? null;
+}
+
+/**
+ * getDistinctSkills
+ * Returns the canonical skill taxonomy — all unique skills across all contractors.
+ */
+export async function getDistinctSkills(): Promise<string[]> {
+  const supabase = getSupabase();
+
+  const { data, error } = await supabase
+    .from("humans")
+    .select("skills");
+
+  if (error) throw new Error(`getDistinctSkills failed: ${error.message}`);
+
+  const skillSet = new Set<string>();
+  for (const row of data ?? []) {
+    for (const s of (row as { skills: string[] }).skills) {
+      skillSet.add(s);
+    }
+  }
+  return [...skillSet].sort();
+}
+
+/**
  * getAllHumans
  * Returns the full whitepages directory.
  */
