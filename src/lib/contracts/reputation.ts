@@ -10,24 +10,25 @@
 import { createPublicClient, http, type Address } from "viem";
 import { baseSepolia, base } from "viem/chains";
 import { REPUTATION_STAKE_ABI } from "./reputation-abi";
+import { getConfig } from "@/lib/config";
 
-// ── Config ──────────────────────────────────────────────────────────────────
+// ── Lazy-initialized client ─────────────────────────────────────────────────
 
-const chain =
-  process.env.NEXT_PUBLIC_BASE_NETWORK === "mainnet" ? base : baseSepolia;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let _publicClient: any = null;
 
-const REPUTATION_STAKE_ADDRESS = process.env
-  .NEXT_PUBLIC_REPUTATION_STAKE_CONTRACT as Address | undefined;
+function getPublicClient() {
+  if (_publicClient) return _publicClient;
+  const config = getConfig();
+  const chain = config.NEXT_PUBLIC_BASE_NETWORK === "mainnet" ? base : baseSepolia;
+  const rpcUrl = config.BASE_SEPOLIA_RPC_URL ?? chain.rpcUrls.default.http[0];
+  _publicClient = createPublicClient({ chain, transport: http(rpcUrl) });
+  return _publicClient;
+}
 
-const rpcUrl =
-  process.env.BASE_SEPOLIA_RPC_URL ?? chain.rpcUrls.default.http[0];
-
-// ── Public client (read-only, server-side) ──────────────────────────────────
-
-const publicClient = createPublicClient({
-  chain,
-  transport: http(rpcUrl),
-});
+function getStakeAddr(): Address | undefined {
+  return getConfig().NEXT_PUBLIC_REPUTATION_STAKE_CONTRACT as Address | undefined;
+}
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -40,12 +41,13 @@ export interface WorkerStake {
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 function getStakeAddress(): Address {
-  if (!REPUTATION_STAKE_ADDRESS) {
+  const addr = getStakeAddr();
+  if (!addr) {
     throw new Error(
       "NEXT_PUBLIC_REPUTATION_STAKE_CONTRACT not set. Deploy the contract first."
     );
   }
-  return REPUTATION_STAKE_ADDRESS;
+  return addr;
 }
 
 // ── Read functions ──────────────────────────────────────────────────────────
@@ -54,7 +56,7 @@ function getStakeAddress(): Address {
  * Read a worker's on-chain stake info.
  */
 export async function getWorkerStake(wallet: string): Promise<WorkerStake> {
-  const result = await publicClient.readContract({
+  const result = await getPublicClient().readContract({
     address: getStakeAddress(),
     abi: REPUTATION_STAKE_ABI,
     functionName: "getStake",
@@ -72,7 +74,7 @@ export async function getWorkerStake(wallet: string): Promise<WorkerStake> {
  * Get total USDC staked across all workers.
  */
 export async function getTotalStaked(): Promise<bigint> {
-  return publicClient.readContract({
+  return getPublicClient().readContract({
     address: getStakeAddress(),
     abi: REPUTATION_STAKE_ABI,
     functionName: "totalStaked",
@@ -83,7 +85,7 @@ export async function getTotalStaked(): Promise<bigint> {
  * Get the current minimum stake amount.
  */
 export async function getMinStake(): Promise<bigint> {
-  return publicClient.readContract({
+  return getPublicClient().readContract({
     address: getStakeAddress(),
     abi: REPUTATION_STAKE_ABI,
     functionName: "minStake",
@@ -94,7 +96,7 @@ export async function getMinStake(): Promise<bigint> {
  * Get the cooldown period in seconds.
  */
 export async function getCooldownPeriod(): Promise<bigint> {
-  return publicClient.readContract({
+  return getPublicClient().readContract({
     address: getStakeAddress(),
     abi: REPUTATION_STAKE_ABI,
     functionName: "COOLDOWN",
@@ -105,8 +107,10 @@ export async function getCooldownPeriod(): Promise<bigint> {
  * Get the reputation stake contract config for client-side use.
  */
 export function getReputationStakeConfig() {
+  const config = getConfig();
+  const chain = config.NEXT_PUBLIC_BASE_NETWORK === "mainnet" ? base : baseSepolia;
   return {
-    address: REPUTATION_STAKE_ADDRESS ?? null,
+    address: (config.NEXT_PUBLIC_REPUTATION_STAKE_CONTRACT as Address) ?? null,
     chainId: chain.id,
     chainName: chain.name,
     usdcDecimals: 6,

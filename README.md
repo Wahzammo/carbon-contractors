@@ -67,14 +67,18 @@ MCP Client ---- JSON-RPC / SSE ----> /api/basedhuman.mcp
 | Discover | `search_whitepages` | Query workers by skill, ranked by reputation |
 | Discover | `get_contractor` | Single worker profile by wallet or ID |
 | Discover | `list_skills` | Canonical skill taxonomy |
+| Discover | `get_reputation` | Computed reputation score + breakdown |
 | Hire | `request_human_work` | Create task + escrow funding instructions |
 | Hire | `get_task_status` | Poll task state (DB + on-chain) |
 | Settle | `confirm_task_completion` | Mark task complete, release escrow |
+| Dispute | `dispute_task` | Flag task as disputed, freeze escrowed funds |
+| Dispute | `resolve_dispute` | Arbitrate dispute: release to worker or refund agent |
 | Config | `register_notification_channel` | Set notification prefs + auto-booking flag |
 
 **MCP Resources:**
 - `human_whitepages` — Full worker directory as structured JSON
 - `escrow_config` — Contract address and chain configuration
+- `reputation_stake_config` — Stake contract address, minimum stake, cooldown period
 
 The server speaks Streamable HTTP (SSE), not WebSocket. Any MCP-compatible client can connect — no custom SDK required.
 
@@ -103,10 +107,21 @@ The server speaks Streamable HTTP (SSE), not WebSocket. Any MCP-compatible clien
 - [x] On-chain USDC escrow contract (Base Sepolia)
 - [x] Task lifecycle MCP tools (create → fund → complete)
 - [x] Notification channels with agent-to-agent auto-booking
+- [x] Reputation staking + on-chain history (ReputationStake.sol)
+- [x] Computed reputation scoring (completion/volume/recency/stake)
+- [x] Dispute resolution MCP tools + dashboard panel
+- [x] Rate limiting middleware
+- [x] Security headers (CSP, HSTS, X-Frame-Options)
+- [x] Zod-validated environment configuration
+- [x] Session management with timeout and capacity limits
+- [x] Enhanced health check (DB + contract connectivity)
+- [x] Full test suite (36 tests, Vitest)
+- [x] GitHub Actions CI pipeline (lint, typecheck, test, build)
+- [x] Vercel deployment configuration
 - [ ] AgentKit autonomous agent wallets
-- [ ] Reputation staking + on-chain history
 - [ ] Task attestation and completion attestations
 - [ ] `/learn` educational content (crypto rails onboarding)
+- [ ] Base Mainnet deployment
 
 ## Design constraints
 

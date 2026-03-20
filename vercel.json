@@ -1,0 +1,10 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "regions": ["iad1"],
+  "functions": {
+    "src/app/api/basedhuman.mcp/route.ts": {
+      "maxDuration": 60
+    }
+  }
+}

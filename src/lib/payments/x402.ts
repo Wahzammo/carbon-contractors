@@ -11,6 +11,7 @@ import { randomBytes } from "crypto";
 import { createTask } from "@/lib/db/tasks";
 import { log } from "@/lib/logging";
 import { toTaskId, getEscrowConfig } from "@/lib/contracts/escrow";
+import { getConfig } from "@/lib/config";
 
 export interface X402PaymentRequest {
   from_agent_wallet: string;
@@ -84,7 +85,7 @@ export async function initiateX402Payment(
     to_human_wallet: req.to_human_wallet,
   });
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
+  const baseUrl = getConfig().NEXT_PUBLIC_BASE_URL;
 
   return {
     status: "awaiting_funding",

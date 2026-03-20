@@ -10,7 +10,11 @@
     "seed": "tsx scripts/seed.ts",
     "compile": "cross-env TS_NODE_PROJECT=tsconfig.hardhat.json npx hardhat compile",
     "deploy:sepolia": "cross-env TS_NODE_PROJECT=tsconfig.hardhat.json npx hardhat run scripts/deploy/escrow.ts --network baseSepolia",
-    "deploy:reputation": "cross-env TS_NODE_PROJECT=tsconfig.hardhat.json npx hardhat run scripts/deploy/reputation-stake.ts --network baseSepolia"
+    "deploy:reputation": "cross-env TS_NODE_PROJECT=tsconfig.hardhat.json npx hardhat run scripts/deploy/reputation-stake.ts --network baseSepolia",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@coinbase/onchainkit": "^1.1.2",
@@ -31,6 +35,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitest/coverage-v8": "^3.2.4",
     "cross-env": "^10.1.0",
     "dotenv": "^17.3.1",
     "eslint": "^9",
@@ -38,6 +43,7 @@
     "hardhat": "^2.28.6",
     "hardhat-deploy": "^1.0.4",
     "tsx": "^4.21.0",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.4"
   }
 }

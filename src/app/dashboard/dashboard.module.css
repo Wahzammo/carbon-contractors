@@ -367,3 +367,60 @@
   font-size: 0.75rem;
   color: #fbbf24;
 }
+
+/* ── Dispute ─────────────────────────────────────────────────────────── */
+
+.disputeSection {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #1a1a1a;
+}
+
+.disputeToggle {
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.disputeToggle:hover {
+  color: #ff4444;
+}
+
+.disputeForm {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.disputeWarning {
+  font-size: 0.75rem;
+  color: #fbbf24;
+  line-height: 1.4;
+}
+
+.disputeBtn {
+  background: #3d0000;
+  color: #ff4444;
+  border: 1px solid #ff4444;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  align-self: flex-start;
+}
+
+.disputeBtn:hover:not(:disabled) {
+  background: #5a0000;
+}
+
+.disputeBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

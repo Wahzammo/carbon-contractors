@@ -15,36 +15,88 @@ import { createMcpServer } from "@/lib/mcp/server";
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import { NextRequest } from "next/server";
 import { log } from "@/lib/logging";
+import { getConfig } from "@/lib/config";
+import { setSessionCount } from "@/lib/mcp/session-count";
 
 // ── Session registry ─────────────────────────────────────────────────────────
-// Maps sessionId → transport. Replace with Redis for multi-replica.
-const sessions = new Map<string, WebStandardStreamableHTTPServerTransport>();
+
+interface SessionEntry {
+  transport: WebStandardStreamableHTTPServerTransport;
+  createdAt: number;
+  lastActivityAt: number;
+}
+
+const sessions = new Map<string, SessionEntry>();
+
+/** Exported for the health check endpoint. */
+export function getSessionCount(): number {
+  return sessions.size;
+}
+
+/**
+ * Purge sessions that have been idle longer than SESSION_TIMEOUT_MS.
+ * Runs inline on each request — no setInterval needed (Vercel-safe).
+ */
+function purgeExpiredSessions(): void {
+  const now = Date.now();
+  let timeoutMs: number;
+  try {
+    timeoutMs = getConfig().SESSION_TIMEOUT_MS;
+  } catch {
+    timeoutMs = 1_800_000; // fallback 30 min
+  }
+
+  for (const [id, entry] of sessions) {
+    if (now - entry.lastActivityAt > timeoutMs) {
+      log("info", "session_expired", { sessionId: id, age_ms: now - entry.createdAt });
+      try {
+        entry.transport.close();
+      } catch {
+        // transport may already be closed
+      }
+      sessions.delete(id);
+    }
+  }
+  setSessionCount(sessions.size);
+}
 
 function createTransport(): WebStandardStreamableHTTPServerTransport {
   const transport = new WebStandardStreamableHTTPServerTransport({
     sessionIdGenerator: () => crypto.randomUUID(),
     onsessioninitialized: (sessionId) => {
-      sessions.set(sessionId, transport);
+      const now = Date.now();
+      sessions.set(sessionId, { transport, createdAt: now, lastActivityAt: now });
+      setSessionCount(sessions.size);
     },
     onsessionclosed: (sessionId) => {
       if (sessionId) sessions.delete(sessionId);
+      setSessionCount(sessions.size);
     },
   });
   return transport;
 }
 
+// ── JSON-RPC error helpers ───────────────────────────────────────────────────
+
+function jsonRpcError(code: number, message: string, status: number): Response {
+  return new Response(
+    JSON.stringify({ jsonrpc: "2.0", error: { code, message }, id: null }),
+    { status, headers: { "Content-Type": "application/json" } }
+  );
+}
+
 // ── Handler ───────────────────────────────────────────────────────────────────
+
 async function handler(req: NextRequest): Promise<Response> {
-  // For POST: check if this is an initialize or a subsequent session request.
+  // Purge stale sessions on every request
+  purgeExpiredSessions();
+
   if (req.method === "POST") {
     let body: unknown;
     try {
       body = await req.clone().json();
     } catch {
-      return new Response(
-        JSON.stringify({ jsonrpc: "2.0", error: { code: -32700, message: "Parse error" }, id: null }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
+      return jsonRpcError(-32700, "Parse error", 400);
     }
 
     const isInit = Array.isArray(body)
@@ -55,15 +107,25 @@ async function handler(req: NextRequest): Promise<Response> {
 
     if (!isInit && sessionId) {
       // Route to existing session transport.
-      const existing = sessions.get(sessionId);
-      if (existing) {
-        return existing.handleRequest(req);
+      const entry = sessions.get(sessionId);
+      if (entry) {
+        entry.lastActivityAt = Date.now();
+        return entry.transport.handleRequest(req);
       }
       log("warn", "session_not_found", { sessionId });
-      return new Response(
-        JSON.stringify({ jsonrpc: "2.0", error: { code: -32001, message: "Session not found" }, id: null }),
-        { status: 404, headers: { "Content-Type": "application/json" } }
-      );
+      return jsonRpcError(-32001, "Session expired or not found. Re-initialize to continue.", 404);
+    }
+
+    // Check capacity before creating a new session
+    let maxSessions: number;
+    try {
+      maxSessions = getConfig().MAX_SESSIONS;
+    } catch {
+      maxSessions = 100;
+    }
+    if (sessions.size >= maxSessions) {
+      log("warn", "session_limit_reached", { current: sessions.size, max: maxSessions });
+      return jsonRpcError(-32000, "Server at capacity. Try again later.", 503);
     }
 
     // New session: fresh server + transport per connection.
@@ -71,13 +133,10 @@ async function handler(req: NextRequest): Promise<Response> {
     const transport = createTransport();
     try {
       await server.connect(transport);
-      log("info", "session_created");
+      log("info", "session_created", { total: sessions.size });
     } catch (err) {
       log("error", "server_connect_failed", { err: String(err) });
-      return new Response(
-        JSON.stringify({ jsonrpc: "2.0", error: { code: -32000, message: "Server connect failed" }, id: null }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
+      return jsonRpcError(-32000, "Server connect failed", 500);
     }
     return transport.handleRequest(req, { parsedBody: body });
   }
@@ -85,21 +144,16 @@ async function handler(req: NextRequest): Promise<Response> {
   // GET/DELETE: route by session ID.
   const sessionId = req.headers.get("mcp-session-id");
   if (sessionId) {
-    const existing = sessions.get(sessionId);
-    if (existing) {
-      return existing.handleRequest(req);
+    const entry = sessions.get(sessionId);
+    if (entry) {
+      entry.lastActivityAt = Date.now();
+      return entry.transport.handleRequest(req);
     }
     log("warn", "session_not_found_get_delete", { sessionId, method: req.method });
-    return new Response(
-      JSON.stringify({ jsonrpc: "2.0", error: { code: -32001, message: "Session not found" }, id: null }),
-      { status: 404, headers: { "Content-Type": "application/json" } }
-    );
+    return jsonRpcError(-32001, "Session expired or not found. Re-initialize to continue.", 404);
   }
 
-  return new Response(
-    JSON.stringify({ jsonrpc: "2.0", error: { code: -32000, message: "Mcp-Session-Id required" }, id: null }),
-    { status: 400, headers: { "Content-Type": "application/json" } }
-  );
+  return jsonRpcError(-32000, "Mcp-Session-Id required", 400);
 }
 
 export { handler as GET, handler as POST, handler as DELETE };

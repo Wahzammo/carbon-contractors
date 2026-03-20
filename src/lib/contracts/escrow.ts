@@ -10,25 +10,25 @@
 import { createPublicClient, http, keccak256, toHex, type Address } from "viem";
 import { baseSepolia, base } from "viem/chains";
 import { CARBON_ESCROW_ABI } from "./escrow-abi";
+import { getConfig } from "@/lib/config";
 
-// ── Config ──────────────────────────────────────────────────────────────────
+// ── Lazy-initialized client ─────────────────────────────────────────────────
 
-const chain =
-  process.env.NEXT_PUBLIC_BASE_NETWORK === "mainnet" ? base : baseSepolia;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let _publicClient: any = null;
 
-const ESCROW_ADDRESS = process.env.NEXT_PUBLIC_ESCROW_CONTRACT as
-  | Address
-  | undefined;
+function getPublicClient() {
+  if (_publicClient) return _publicClient;
+  const config = getConfig();
+  const chain = config.NEXT_PUBLIC_BASE_NETWORK === "mainnet" ? base : baseSepolia;
+  const rpcUrl = config.BASE_SEPOLIA_RPC_URL ?? chain.rpcUrls.default.http[0];
+  _publicClient = createPublicClient({ chain, transport: http(rpcUrl) });
+  return _publicClient;
+}
 
-const rpcUrl =
-  process.env.BASE_SEPOLIA_RPC_URL ?? chain.rpcUrls.default.http[0];
-
-// ── Public client (read-only, server-side) ──────────────────────────────────
-
-const publicClient = createPublicClient({
-  chain,
-  transport: http(rpcUrl),
-});
+function getEscrowAddr(): Address | undefined {
+  return getConfig().NEXT_PUBLIC_ESCROW_CONTRACT as Address | undefined;
+}
 
 // ── Task state enum (mirrors Solidity) ──────────────────────────────────────
 
@@ -63,12 +63,13 @@ export function toTaskId(paymentRequestId: string): `0x${string}` {
 }
 
 function getEscrowAddress(): Address {
-  if (!ESCROW_ADDRESS) {
+  const addr = getEscrowAddr();
+  if (!addr) {
     throw new Error(
       "NEXT_PUBLIC_ESCROW_CONTRACT not set. Deploy the contract first."
     );
   }
-  return ESCROW_ADDRESS;
+  return addr;
 }
 
 // ── Read functions ──────────────────────────────────────────────────────────
@@ -80,7 +81,7 @@ export async function getOnChainTask(
   paymentRequestId: string
 ): Promise<OnChainTask> {
   const taskId = toTaskId(paymentRequestId);
-  const result = await publicClient.readContract({
+  const result = await getPublicClient().readContract({
     address: getEscrowAddress(),
     abi: CARBON_ESCROW_ABI,
     functionName: "getTask",
@@ -109,7 +110,7 @@ export async function getOnChainTask(
  * Get total USDC currently locked in the escrow contract.
  */
 export async function getTotalLocked(): Promise<bigint> {
-  return publicClient.readContract({
+  return getPublicClient().readContract({
     address: getEscrowAddress(),
     abi: CARBON_ESCROW_ABI,
     functionName: "totalLocked",
@@ -120,8 +121,10 @@ export async function getTotalLocked(): Promise<bigint> {
  * Get the escrow contract address and chain info for client-side use.
  */
 export function getEscrowConfig() {
+  const config = getConfig();
+  const chain = config.NEXT_PUBLIC_BASE_NETWORK === "mainnet" ? base : baseSepolia;
   return {
-    address: ESCROW_ADDRESS ?? null,
+    address: (config.NEXT_PUBLIC_ESCROW_CONTRACT as Address) ?? null,
     chainId: chain.id,
     chainName: chain.name,
     usdcDecimals: 6,

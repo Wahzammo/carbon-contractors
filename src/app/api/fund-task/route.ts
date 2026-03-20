@@ -18,16 +18,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { withX402 } from "x402-next";
 import { getTaskByPaymentId, updateTaskStatus } from "@/lib/db/tasks";
 import { log } from "@/lib/logging";
+import { getConfig } from "@/lib/config";
 import type { Address } from "viem";
 
-const PLATFORM_WALLET = (process.env.NEXT_PUBLIC_ESCROW_CONTRACT ??
-  process.env.PLATFORM_WALLET_ADDRESS ??
-  "") as Address;
+function getPlatformWallet(): Address {
+  const config = getConfig();
+  return (config.NEXT_PUBLIC_ESCROW_CONTRACT ??
+    config.PLATFORM_WALLET_ADDRESS ??
+    "") as Address;
+}
 
-const NETWORK =
-  process.env.NEXT_PUBLIC_BASE_NETWORK === "mainnet"
+function getNetwork(): "base" | "base-sepolia" {
+  return getConfig().NEXT_PUBLIC_BASE_NETWORK === "mainnet"
     ? "base"
     : "base-sepolia";
+}
 
 /**
  * Inner handler — runs only after x402 payment is verified.
@@ -109,7 +114,7 @@ async function dynamicRouteConfig(req: NextRequest) {
       if (task) {
         return {
           price: `$${task.amount_usdc}`,
-          network: NETWORK as "base" | "base-sepolia",
+          network: getNetwork(),
           config: {
             description: `Carbon Contractors task funding: ${task.task_description.slice(0, 100)}`,
           },
@@ -123,7 +128,7 @@ async function dynamicRouteConfig(req: NextRequest) {
   // Default: minimum price for discovery/invalid requests
   return {
     price: "$0.01",
-    network: NETWORK as "base" | "base-sepolia",
+    network: getNetwork(),
     config: {
       description: "Carbon Contractors task funding",
     },
@@ -132,6 +137,6 @@ async function dynamicRouteConfig(req: NextRequest) {
 
 export const POST = withX402(
   fundTaskHandler,
-  PLATFORM_WALLET,
+  getPlatformWallet(),
   dynamicRouteConfig
 );

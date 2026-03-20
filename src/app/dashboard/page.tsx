@@ -9,6 +9,7 @@ import {
   WalletDropdownDisconnect,
 } from "@coinbase/onchainkit/wallet";
 import { Address, Avatar, Name, Identity } from "@coinbase/onchainkit/identity";
+import { keccak256, toHex } from "viem";
 import Link from "next/link";
 import styles from "./dashboard.module.css";
 
@@ -39,6 +40,16 @@ const STAKE_ABI = [
     type: "function",
     name: "unstake",
     inputs: [{ name: "amount", type: "uint256" }],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+] as const;
+
+const DISPUTE_ABI = [
+  {
+    type: "function",
+    name: "disputeTask",
+    inputs: [{ name: "taskId", type: "bytes32" }],
     outputs: [],
     stateMutability: "nonpayable",
   },
@@ -139,6 +150,8 @@ export default function DashboardPage() {
   const [error, setError] = useState("");
   const [stakeInput, setStakeInput] = useState("");
   const [unstakeInput, setUnstakeInput] = useState("");
+  const [disputeOpen, setDisputeOpen] = useState<Record<string, boolean>>({});
+  const [disputeLoading, setDisputeLoading] = useState<string | null>(null);
   const [stakeStep, setStakeStep] = useState<"idle" | "approving" | "staking" | "unstaking">("idle");
 
   const { writeContract, data: txHash } = useWriteContract();
@@ -234,6 +247,34 @@ export default function DashboardPage() {
   const cooldownDate = reputation?.stake?.staked_at
     ? new Date((reputation.stake.staked_at + 7 * 24 * 3600) * 1000)
     : null;
+
+  const escrowContract = process.env.NEXT_PUBLIC_ESCROW_CONTRACT as `0x${string}` | undefined;
+
+  async function handleDispute(task: Task) {
+    if (!escrowContract) return;
+    setDisputeLoading(task.payment_request_id);
+    try {
+      // 1. Call escrow.disputeTask on-chain
+      const taskIdBytes32 = keccak256(toHex(task.payment_request_id));
+      writeContract({
+        address: escrowContract,
+        abi: DISPUTE_ABI,
+        functionName: "disputeTask",
+        args: [taskIdBytes32],
+      });
+      // 2. Update DB via REST
+      await fetch("/api/dispute", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ payment_request_id: task.payment_request_id }),
+      });
+    } catch {
+      // on-chain tx may fail — DB update still attempted
+    } finally {
+      setDisputeLoading(null);
+      fetchData();
+    }
+  }
 
   return (
     <div className={styles.page}>
@@ -450,6 +491,40 @@ export default function DashboardPage() {
                         </span>
                       )}
                     </div>
+
+                    {/* Dispute section for active tasks */}
+                    {task.status === "active" && escrowContract && (
+                      <div className={styles.disputeSection}>
+                        <button
+                          className={styles.disputeToggle}
+                          onClick={() =>
+                            setDisputeOpen((prev) => ({
+                              ...prev,
+                              [task.id]: !prev[task.id],
+                            }))
+                          }
+                        >
+                          {disputeOpen[task.id] ? "Cancel" : "Dispute this task"}
+                        </button>
+                        {disputeOpen[task.id] && (
+                          <div className={styles.disputeForm}>
+                            <p className={styles.disputeWarning}>
+                              Disputing will freeze escrowed funds until the
+                              platform owner resolves the dispute.
+                            </p>
+                            <button
+                              className={styles.disputeBtn}
+                              onClick={() => handleDispute(task)}
+                              disabled={disputeLoading === task.payment_request_id}
+                            >
+                              {disputeLoading === task.payment_request_id
+                                ? "Submitting..."
+                                : "Confirm Dispute"}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

@@ -27,6 +27,7 @@ import {
 import {
   getOnChainTask,
   getEscrowConfig,
+  toTaskId,
   TaskStateEnum,
 } from "@/lib/contracts/escrow";
 import { getReputationStakeConfig } from "@/lib/contracts/reputation";
@@ -547,6 +548,190 @@ export function createMcpServer(): McpServer {
               text: JSON.stringify({
                 ok: true,
                 reputation,
+              }),
+            },
+          ],
+        };
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        return {
+          isError: true,
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify({ ok: false, error: message }),
+            },
+          ],
+        };
+      }
+    }
+  );
+
+  // ─── Tool: dispute_task ──────────────────────────────────────────────────
+  server.tool(
+    "dispute_task",
+    "Flag a task as disputed in the database. The caller (agent or worker) should also call escrow.disputeTask(taskId) on-chain to freeze escrowed funds. Requires task status 'active' or 'pending'.",
+    {
+      payment_request_id: z
+        .string()
+        .min(1)
+        .describe("The payment_request_id of the task to dispute"),
+      reason: z
+        .string()
+        .min(10)
+        .max(500)
+        .describe("Reason for the dispute"),
+    },
+    async ({ payment_request_id, reason }) => {
+      try {
+        const task = await getTaskByPaymentId(payment_request_id);
+        if (!task) {
+          return {
+            isError: true,
+            content: [
+              {
+                type: "text" as const,
+                text: JSON.stringify({
+                  ok: false,
+                  error: "Task not found",
+                }),
+              },
+            ],
+          };
+        }
+
+        if (task.status !== "active" && task.status !== "pending") {
+          return {
+            isError: true,
+            content: [
+              {
+                type: "text" as const,
+                text: JSON.stringify({
+                  ok: false,
+                  error: `Task is ${task.status}, cannot dispute`,
+                }),
+              },
+            ],
+          };
+        }
+
+        await updateTaskStatus(payment_request_id, "disputed");
+
+        const taskIdBytes32 = toTaskId(payment_request_id);
+        const escrowConfig = getEscrowConfig();
+
+        log("info", "task_disputed", {
+          payment_request_id,
+          reason,
+          amount_usdc: task.amount_usdc,
+        });
+
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify({
+                ok: true,
+                payment_request_id,
+                status: "disputed",
+                task_id_bytes32: taskIdBytes32,
+                escrow_contract: escrowConfig.address,
+                note: "Database updated. Call escrow.disputeTask(taskId) on-chain to freeze funds.",
+              }),
+            },
+          ],
+        };
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        return {
+          isError: true,
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify({ ok: false, error: message }),
+            },
+          ],
+        };
+      }
+    }
+  );
+
+  // ─── Tool: resolve_dispute ──────────────────────────────────────────────
+  server.tool(
+    "resolve_dispute",
+    "Resolve a disputed task. Sets status to 'completed' (release to worker) or 'expired' (refund agent). The platform owner should also call escrow.resolveDispute(taskId, releaseToWorker) on-chain.",
+    {
+      payment_request_id: z
+        .string()
+        .min(1)
+        .describe("The payment_request_id of the disputed task"),
+      release_to_worker: z
+        .boolean()
+        .describe("True to release funds to worker, false to refund agent"),
+      resolution_note: z
+        .string()
+        .min(5)
+        .max(500)
+        .describe("Brief explanation of the resolution"),
+    },
+    async ({ payment_request_id, release_to_worker, resolution_note }) => {
+      try {
+        const task = await getTaskByPaymentId(payment_request_id);
+        if (!task) {
+          return {
+            isError: true,
+            content: [
+              {
+                type: "text" as const,
+                text: JSON.stringify({
+                  ok: false,
+                  error: "Task not found",
+                }),
+              },
+            ],
+          };
+        }
+
+        if (task.status !== "disputed") {
+          return {
+            isError: true,
+            content: [
+              {
+                type: "text" as const,
+                text: JSON.stringify({
+                  ok: false,
+                  error: `Task is ${task.status}, can only resolve disputed tasks`,
+                }),
+              },
+            ],
+          };
+        }
+
+        const newStatus = release_to_worker ? "completed" : "expired";
+        await updateTaskStatus(payment_request_id, newStatus);
+
+        const taskIdBytes32 = toTaskId(payment_request_id);
+        const escrowConfig = getEscrowConfig();
+
+        log("info", "dispute_resolved", {
+          payment_request_id,
+          release_to_worker,
+          resolution_note,
+          amount_usdc: task.amount_usdc,
+        });
+
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify({
+                ok: true,
+                payment_request_id,
+                status: newStatus,
+                release_to_worker,
+                task_id_bytes32: taskIdBytes32,
+                escrow_contract: escrowConfig.address,
+                note: `Database updated. Call escrow.resolveDispute(taskId, ${release_to_worker}) on-chain to ${release_to_worker ? "release USDC to worker" : "refund USDC to agent"}.`,
               }),
             },
           ],
