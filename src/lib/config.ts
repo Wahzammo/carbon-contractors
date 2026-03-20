@@ -37,6 +37,9 @@ const envSchema = z.object({
   // ── Rate limiting ─────────────────────────────────────────────────────────
   RATE_LIMIT_WINDOW_MS: z.coerce.number().default(60_000), // 1 min
   RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(60),
+
+  // ── /learn + Stables affiliate (optional — set when affiliate approved) ──
+  NEXT_PUBLIC_STABLES_AFFILIATE_URL: z.string().optional(),
 });
 
 export type AppConfig = z.infer<typeof envSchema>;
