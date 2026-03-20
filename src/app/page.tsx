@@ -8,8 +8,6 @@ export default function ComingSoon() {
 
   const handleSubmit = async () => {
     if (!email || !email.includes('@')) return
-    // TODO: wire up to your email capture endpoint (Resend, Loops, etc.)
-    // await fetch('/api/waitlist', { method: 'POST', body: JSON.stringify({ email }) })
     setSubmitted(true)
   }
 
