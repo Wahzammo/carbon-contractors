@@ -5,10 +5,30 @@ import { useState } from 'react'
 export default function ComingSoon() {
   const [email, setEmail] = useState('')
   const [submitted, setSubmitted] = useState(false)
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
   const handleSubmit = async () => {
     if (!email || !email.includes('@')) return
-    setSubmitted(true)
+    setLoading(true)
+    setError('')
+    try {
+      const res = await fetch('/api/waitlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.error ?? 'Something went wrong')
+      } else {
+        setSubmitted(true)
+      }
+    } catch {
+      setError('Network error — try again')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -55,7 +75,7 @@ export default function ComingSoon() {
         .cc-logo {
           font-size: 11px;
           letter-spacing: 0.20em;
-          color: #3E3E3A;
+          color: #B0B0A8;
           text-transform: uppercase;
         }
 
@@ -65,7 +85,7 @@ export default function ComingSoon() {
           gap: 8px;
           font-size: 11px;
           letter-spacing: 0.12em;
-          color: #3E3E3A;
+          color: #B0B0A8;
         }
 
         .cc-dot {
@@ -115,7 +135,7 @@ export default function ComingSoon() {
 
         .cc-tagline {
           font-size: 13px;
-          color: #4E4E4A;
+          color: #C8C8C0;
           letter-spacing: 0.06em;
           line-height: 2;
           margin-top: 28px;
@@ -123,7 +143,7 @@ export default function ComingSoon() {
         }
 
         .cc-tagline b {
-          color: #7A7A72;
+          color: #E0E0D8;
           font-weight: 400;
         }
 
@@ -146,7 +166,7 @@ export default function ComingSoon() {
           transition: border-color 0.15s;
         }
 
-        .cc-input::placeholder { color: #2E2E2A; }
+        .cc-input::placeholder { color: #9A9A92; }
         .cc-input:focus { border-color: #00D27A; }
 
         .cc-btn {
@@ -166,6 +186,18 @@ export default function ComingSoon() {
         .cc-btn:hover { background: #00E88A; }
         .cc-btn:active { background: #00BC6D; }
 
+        .cc-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .cc-error {
+          font-size: 11px;
+          letter-spacing: 0.10em;
+          color: #FF5555;
+          margin-top: 10px;
+        }
+
         .cc-success {
           font-size: 12px;
           letter-spacing: 0.10em;
@@ -183,15 +215,15 @@ export default function ComingSoon() {
         .cc-pill {
           font-size: 9px;
           letter-spacing: 0.18em;
-          color: #2A2A26;
-          border: 1px solid #1A1A18;
+          color: #B0B0A8;
+          border: 1px solid #5A5A52;
           padding: 7px 13px;
         }
 
         .cc-footer {
           margin-top: 48px;
           font-size: 10px;
-          color: #242420;
+          color: #9A9A92;
           letter-spacing: 0.14em;
         }
 
@@ -227,19 +259,23 @@ export default function ComingSoon() {
             {submitted ? (
               <p className="cc-success">✓ you&apos;re on the list</p>
             ) : (
-              <div className="cc-form">
-                <input
-                  className="cc-input"
-                  type="email"
-                  placeholder="your@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-                />
-                <button className="cc-btn" onClick={handleSubmit}>
-                  GET ACCESS
-                </button>
-              </div>
+              <>
+                <div className="cc-form">
+                  <input
+                    className="cc-input"
+                    type="email"
+                    placeholder="your@email.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+                    disabled={loading}
+                  />
+                  <button className="cc-btn" onClick={handleSubmit} disabled={loading}>
+                    {loading ? '...' : 'GET ACCESS'}
+                  </button>
+                </div>
+                {error && <p className="cc-error">{error}</p>}
+              </>
             )}
           </main>
 
