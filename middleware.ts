@@ -3,14 +3,14 @@
  * Combined middleware: coming-soon redirect + API rate limiting.
  * Runs on edge runtime — must NOT import Node.js modules.
  *
- * To go live: remove the COMING_SOON redirect block below.
+ * To go live: set NEXT_PUBLIC_COMING_SOON=false in env vars.
  */
 
 import { NextRequest, NextResponse } from "next/server";
 
 // ── Coming Soon Redirect ────────────────────────────────────────────────────
 
-const COMING_SOON = true; // flip to false (or delete this block) to go live
+const COMING_SOON = process.env.NEXT_PUBLIC_COMING_SOON !== "false";
 
 const BYPASS = [
   "/api/",

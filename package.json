@@ -24,6 +24,8 @@
     "next": "16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
     "viem": "^2.47.4",
     "wagmi": "^2.19.5",
     "x402-next": "^1.1.0",

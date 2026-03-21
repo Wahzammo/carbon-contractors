@@ -2,14 +2,7 @@
 
 import { useState } from "react";
 import { useAccount, useSignMessage } from "wagmi";
-import {
-  ConnectWallet,
-  Wallet,
-  WalletDropdown,
-  WalletDropdownDisconnect,
-} from "@coinbase/onchainkit/wallet";
-import { Address, Avatar, Name, Identity } from "@coinbase/onchainkit/identity";
-import Link from "next/link";
+import PageShell from "@/components/PageShell";
 import styles from "./connect.module.css";
 
 const AVAILABLE_SKILLS = [
@@ -88,23 +81,8 @@ export default function ConnectPage() {
   }
 
   return (
-    <div className={styles.page}>
-      <header className={styles.header}>
-        <Link href="/" className={styles.title}>Carbon Contractors</Link>
-        <Wallet>
-          <ConnectWallet />
-          <WalletDropdown>
-            <Identity hasCopyAddressOnClick>
-              <Avatar />
-              <Name />
-              <Address />
-            </Identity>
-            <WalletDropdownDisconnect />
-          </WalletDropdown>
-        </Wallet>
-      </header>
-
-      <main className={styles.main}>
+    <PageShell>
+      <div className={styles.content}>
         {!isConnected ? (
           <div className={styles.hero}>
             <h2>Register as a Worker</h2>
@@ -176,7 +154,7 @@ export default function ConnectPage() {
             )}
           </div>
         )}
-      </main>
-    </div>
+      </div>
+    </PageShell>
   );
 }

@@ -1,37 +1,6 @@
-.page {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  font-family: var(--font-geist-sans);
-  background: #0a0a0a;
-  color: #ededed;
-}
-
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 2rem;
-  border-bottom: 1px solid #222;
-}
-
-.title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  text-decoration: none;
-  color: #ededed;
-}
-
-.main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 2rem;
-  max-width: 720px;
-  margin: 0 auto;
+.content {
   width: 100%;
+  max-width: 720px;
 }
 
 .hero {
@@ -42,37 +11,40 @@
 
 .hero h2 {
   font-size: 1.8rem;
-  font-weight: 600;
+  font-weight: 500;
+  letter-spacing: -0.02em;
   margin-bottom: 1rem;
+  color: var(--cc-text);
 }
 
 .hero p {
-  color: #888;
+  color: var(--cc-text-secondary);
   line-height: 1.6;
   margin-bottom: 0.75rem;
 }
 
 .pageTitle {
   font-size: 1.4rem;
-  font-weight: 600;
+  font-weight: 500;
   margin-bottom: 1.5rem;
   align-self: flex-start;
+  color: var(--cc-text);
 }
 
 .loading {
-  color: #888;
+  color: var(--cc-text-muted);
   margin-top: 2rem;
 }
 
 .emptyState {
   text-align: center;
-  color: #888;
+  color: var(--cc-text-secondary);
   margin-top: 3rem;
   line-height: 1.6;
 }
 
 .emptyState a {
-  color: #0052ff;
+  color: var(--cc-blue-bright);
   text-decoration: none;
 }
 
@@ -88,14 +60,15 @@
 }
 
 .taskCard {
-  border: 1px solid #222;
+  border: 1px solid var(--cc-border-subtle);
   border-radius: 8px;
   padding: 1.25rem;
+  background: var(--cc-bg-surface);
   transition: border-color 0.15s;
 }
 
 .taskCard:hover {
-  border-color: #333;
+  border-color: var(--cc-border);
 }
 
 .taskHeader {
@@ -106,48 +79,49 @@
 }
 
 .statusBadge {
+  font-family: var(--cc-font-mono);
   font-size: 0.7rem;
-  font-weight: 600;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   padding: 0.2rem 0.5rem;
   border-radius: 4px;
 }
 
 .statusPending {
-  background: #3d3200;
-  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.15);
+  color: var(--cc-yellow);
 }
 
 .statusActive {
-  background: #001a4d;
-  color: #0052ff;
+  background: rgba(0, 0, 255, 0.12);
+  color: var(--cc-blue-bright);
 }
 
 .statusCompleted {
-  background: #003d1a;
-  color: #22c55e;
+  background: rgba(0, 210, 122, 0.12);
+  color: var(--cc-green);
 }
 
 .statusDisputed {
-  background: #3d0000;
-  color: #ff4444;
+  background: rgba(255, 68, 68, 0.12);
+  color: var(--cc-red);
 }
 
 .statusExpired {
-  background: #222;
-  color: #888;
+  background: var(--cc-bg-elevated);
+  color: var(--cc-text-muted);
 }
 
 .amount {
-  font-family: var(--font-geist-mono);
+  font-family: var(--cc-font-mono);
   font-size: 1rem;
   font-weight: 600;
-  color: #0052ff;
+  color: var(--cc-green);
 }
 
 .description {
-  color: #ccc;
+  color: var(--cc-text-secondary);
   font-size: 0.9rem;
   line-height: 1.5;
   margin-bottom: 0.75rem;
@@ -158,25 +132,25 @@
   flex-wrap: wrap;
   gap: 1rem;
   font-size: 0.78rem;
-  color: #666;
+  color: var(--cc-text-muted);
 }
 
 .metaLabel {
-  color: #555;
+  color: var(--cc-text-faint);
 }
 
 .metaValue {
-  font-family: var(--font-geist-mono);
-  color: #888;
+  font-family: var(--cc-font-mono);
+  color: var(--cc-text-muted);
 }
 
 .onChainBadge {
   font-size: 0.7rem;
   padding: 0.15rem 0.4rem;
   border-radius: 3px;
-  background: #1a1a2e;
-  color: #7c6fff;
-  font-family: var(--font-geist-mono);
+  background: rgba(0, 0, 255, 0.1);
+  color: var(--cc-blue-bright);
+  font-family: var(--cc-font-mono);
 }
 
 /* ── Reputation + Staking ──────────────────────────────────────────────── */
@@ -196,9 +170,10 @@
 }
 
 .reputationCard {
-  border: 1px solid #222;
+  border: 1px solid var(--cc-border-subtle);
   border-radius: 8px;
   padding: 1.25rem;
+  background: var(--cc-bg-surface);
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -213,14 +188,14 @@
 .scoreNumber {
   font-size: 2.5rem;
   font-weight: 700;
-  font-family: var(--font-geist-mono);
-  color: #0052ff;
+  font-family: var(--cc-font-mono);
+  color: var(--cc-green);
   line-height: 1;
 }
 
 .scoreLabel {
   font-size: 0.85rem;
-  color: #555;
+  color: var(--cc-text-faint);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -239,15 +214,15 @@
 }
 
 .breakdownValue {
-  font-family: var(--font-geist-mono);
+  font-family: var(--cc-font-mono);
   font-size: 1rem;
   font-weight: 600;
-  color: #ededed;
+  color: var(--cc-text);
 }
 
 .breakdownLabel {
   font-size: 0.65rem;
-  color: #555;
+  color: var(--cc-text-faint);
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
@@ -257,36 +232,38 @@
   flex-wrap: wrap;
   gap: 1rem;
   font-size: 0.78rem;
-  color: #666;
+  color: var(--cc-text-muted);
 }
 
 .stakePanel {
-  border: 1px solid #222;
+  border: 1px solid var(--cc-border-subtle);
   border-radius: 8px;
   padding: 1.25rem;
+  background: var(--cc-bg-surface);
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
 }
 
 .stakePanelTitle {
+  font-family: var(--cc-font-mono);
   font-size: 0.85rem;
-  font-weight: 600;
-  color: #888;
+  font-weight: 500;
+  color: var(--cc-text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
 }
 
 .stakeAmount {
-  font-family: var(--font-geist-mono);
+  font-family: var(--cc-font-mono);
   font-size: 1.5rem;
   font-weight: 700;
-  color: #22c55e;
+  color: var(--cc-green);
 }
 
 .slashedNote {
   font-size: 0.75rem;
-  color: #ff4444;
+  color: var(--cc-red);
 }
 
 .stakeActions {
@@ -302,27 +279,27 @@
 
 .stakeInput {
   flex: 1;
-  background: #111;
-  border: 1px solid #333;
+  background: var(--cc-bg-elevated);
+  border: 1px solid var(--cc-border);
   border-radius: 6px;
   padding: 0.5rem 0.75rem;
-  color: #ededed;
-  font-family: var(--font-geist-mono);
+  color: var(--cc-text);
+  font-family: var(--cc-font-mono);
   font-size: 0.85rem;
   outline: none;
 }
 
 .stakeInput:focus {
-  border-color: #0052ff;
+  border-color: var(--cc-green);
 }
 
 .stakeInput::placeholder {
-  color: #555;
+  color: var(--cc-text-faint);
 }
 
 .stakeBtn {
-  background: #0052ff;
-  color: white;
+  background: var(--cc-green);
+  color: #0A0B0D;
   border: none;
   border-radius: 6px;
   padding: 0.5rem 1rem;
@@ -333,7 +310,7 @@
 }
 
 .stakeBtn:hover:not(:disabled) {
-  background: #0040cc;
+  background: var(--cc-green-hover);
 }
 
 .stakeBtn:disabled {
@@ -343,8 +320,8 @@
 
 .unstakeBtn {
   background: transparent;
-  color: #888;
-  border: 1px solid #333;
+  color: var(--cc-text-muted);
+  border: 1px solid var(--cc-border);
   border-radius: 6px;
   padding: 0.5rem 1rem;
   font-size: 0.85rem;
@@ -354,8 +331,8 @@
 }
 
 .unstakeBtn:hover:not(:disabled) {
-  color: #ededed;
-  border-color: #555;
+  color: var(--cc-text);
+  border-color: var(--cc-text-muted);
 }
 
 .unstakeBtn:disabled {
@@ -365,7 +342,7 @@
 
 .cooldownNote {
   font-size: 0.75rem;
-  color: #fbbf24;
+  color: var(--cc-yellow);
 }
 
 /* ── Dispute ─────────────────────────────────────────────────────────── */
@@ -373,13 +350,13 @@
 .disputeSection {
   margin-top: 0.75rem;
   padding-top: 0.75rem;
-  border-top: 1px solid #1a1a1a;
+  border-top: 1px solid var(--cc-border-subtle);
 }
 
 .disputeToggle {
   background: none;
   border: none;
-  color: #666;
+  color: var(--cc-text-muted);
   font-size: 0.75rem;
   cursor: pointer;
   padding: 0;
@@ -388,7 +365,7 @@
 }
 
 .disputeToggle:hover {
-  color: #ff4444;
+  color: var(--cc-red);
 }
 
 .disputeForm {
@@ -400,14 +377,14 @@
 
 .disputeWarning {
   font-size: 0.75rem;
-  color: #fbbf24;
+  color: var(--cc-yellow);
   line-height: 1.4;
 }
 
 .disputeBtn {
-  background: #3d0000;
-  color: #ff4444;
-  border: 1px solid #ff4444;
+  background: rgba(255, 68, 68, 0.1);
+  color: var(--cc-red);
+  border: 1px solid var(--cc-red);
   border-radius: 6px;
   padding: 0.5rem 1rem;
   font-size: 0.8rem;
@@ -417,7 +394,7 @@
 }
 
 .disputeBtn:hover:not(:disabled) {
-  background: #5a0000;
+  background: rgba(255, 68, 68, 0.2);
 }
 
 .disputeBtn:disabled {

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import PageShell from "@/components/PageShell";
 import styles from "./mcp-info.module.css";
 
 const TOOLS = [
@@ -39,7 +39,7 @@ const TOOLS = [
   {
     name: "get_task_status",
     description:
-      "Check the status of a task by payment_request_id. Returns both database state and on-chain escrow state.",
+      "Check the status of a task by payment_request_id. Returns both database state and onchain escrow state.",
     params: ["payment_request_id: string"],
     phase: "Hire",
   },
@@ -81,7 +81,7 @@ const RESOURCES = [
     name: "escrow_config",
     uri: "base-human://escrow/config",
     description:
-      "Escrow contract address and chain configuration for on-chain interactions.",
+      "Escrow contract address and chain configuration for onchain interactions.",
   },
 ];
 
@@ -91,22 +91,8 @@ export default function McpInfoPage() {
   const network = process.env.NEXT_PUBLIC_BASE_NETWORK ?? "testnet";
 
   return (
-    <div className={styles.page}>
-      <header className={styles.header}>
-        <Link href="/" className={styles.title}>
-          Carbon Contractors
-        </Link>
-        <nav className={styles.nav}>
-          <Link href="/connect" className={styles.navLink}>
-            Register
-          </Link>
-          <Link href="/dashboard" className={styles.navLink}>
-            Dashboard
-          </Link>
-        </nav>
-      </header>
-
-      <main className={styles.main}>
+    <PageShell>
+      <div className={styles.content}>
         <h1 className={styles.pageTitle}>MCP Server</h1>
         <p className={styles.subtitle}>
           This server implements the Model Context Protocol (MCP) Streamable HTTP
@@ -211,7 +197,7 @@ export default function McpInfoPage() {
   }
 }`}</pre>
         </section>
-      </main>
-    </div>
+      </div>
+    </PageShell>
   );
 }

@@ -1,13 +1,42 @@
+/* Carbon Contractors — Design Tokens */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Backgrounds (Base Black palette) */
+  --cc-bg: #0A0B0D;
+  --cc-bg-surface: #111214;
+  --cc-bg-elevated: #1a1b1f;
+
+  /* Borders (Base Gray) */
+  --cc-border: #32353d;
+  --cc-border-subtle: #222428;
+
+  /* Text (Base Gray scale) */
+  --cc-text: #eef0f3;
+  --cc-text-secondary: #b1b7c3;
+  --cc-text-muted: #717886;
+  --cc-text-faint: #5b616e;
+
+  /* Accents */
+  --cc-green: #00D27A;
+  --cc-green-hover: #00E88A;
+  --cc-green-dim: rgba(0, 210, 122, 0.15);
+  --cc-blue: #0000FF;
+  --cc-blue-bright: #3c8aff;
+  --cc-red: #ff4444;
+  --cc-yellow: #fbbf24;
+
+  /* Typography */
+  --cc-font-sans: var(--font-sans), 'Inter Tight', Inter, sans-serif;
+  --cc-font-mono: var(--font-mono), 'Doto', 'Roboto Mono', monospace;
+
+  color-scheme: dark;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Reset */
+*, *::before, *::after {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
 }
 
 html,
@@ -17,26 +46,14 @@ body {
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--cc-bg);
+  color: var(--cc-text);
+  font-family: var(--cc-font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
 }
 
 a {
   color: inherit;
   text-decoration: none;
-}
-
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
 }

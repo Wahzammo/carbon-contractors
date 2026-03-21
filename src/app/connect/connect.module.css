@@ -1,33 +1,5 @@
-.page {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  font-family: var(--font-geist-sans);
-  background: #0a0a0a;
-  color: #ededed;
-}
-
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 2rem;
-  border-bottom: 1px solid #222;
-}
-
-.title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  text-decoration: none;
-  color: #ededed;
-}
-
-.main {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  padding: 3rem 2rem;
+.content {
+  max-width: 520px;
 }
 
 .hero {
@@ -37,25 +9,27 @@
 
 .hero h2 {
   font-size: 1.8rem;
-  font-weight: 600;
+  font-weight: 500;
+  letter-spacing: -0.02em;
   margin-bottom: 1rem;
+  color: var(--cc-text);
 }
 
 .hero p {
-  color: #888;
+  color: var(--cc-text-secondary);
   line-height: 1.6;
   margin-bottom: 0.75rem;
 }
 
 .subtle {
   font-size: 0.85rem;
-  color: #555;
+  color: var(--cc-text-muted);
 }
 
 .mono {
-  font-family: var(--font-geist-mono);
+  font-family: var(--cc-font-mono);
   font-size: 0.8rem;
-  color: #0052ff;
+  color: var(--cc-green);
   word-break: break-all;
 }
 
@@ -66,9 +40,10 @@
 
 .form h2 {
   font-size: 1.1rem;
-  font-weight: 600;
+  font-weight: 500;
   margin-top: 2rem;
   margin-bottom: 0.5rem;
+  color: var(--cc-text);
 }
 
 .form h2:first-child {
@@ -76,7 +51,7 @@
 }
 
 .form p {
-  color: #888;
+  color: var(--cc-text-secondary);
   font-size: 0.85rem;
   margin-bottom: 1rem;
 }
@@ -91,40 +66,40 @@
 .skill {
   padding: 0.4rem 0.8rem;
   border-radius: 6px;
-  border: 1px solid #333;
+  border: 1px solid var(--cc-border);
   background: transparent;
-  color: #aaa;
+  color: var(--cc-text-secondary);
   font-size: 0.8rem;
   cursor: pointer;
   transition: all 0.15s;
 }
 
 .skill:hover {
-  border-color: #555;
-  color: #ededed;
+  border-color: var(--cc-text-muted);
+  color: var(--cc-text);
 }
 
 .skillActive {
-  background: #0052ff;
-  border-color: #0052ff;
-  color: #fff;
+  background: var(--cc-green);
+  border-color: var(--cc-green);
+  color: #0A0B0D;
 }
 
 .input {
   width: 100%;
   padding: 0.6rem 0.8rem;
   border-radius: 6px;
-  border: 1px solid #333;
-  background: #111;
-  color: #ededed;
+  border: 1px solid var(--cc-border);
+  background: var(--cc-bg-surface);
+  color: var(--cc-text);
   font-size: 0.9rem;
-  font-family: var(--font-geist-mono);
+  font-family: var(--cc-font-mono);
   outline: none;
   margin-bottom: 1.5rem;
 }
 
 .input:focus {
-  border-color: #0052ff;
+  border-color: var(--cc-green);
 }
 
 .register {
@@ -132,16 +107,16 @@
   padding: 0.75rem;
   border-radius: 8px;
   border: none;
-  background: #0052ff;
-  color: #fff;
+  background: var(--cc-green);
+  color: #0A0B0D;
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.15s;
+  transition: background 0.15s;
 }
 
 .register:hover:not(:disabled) {
-  opacity: 0.9;
+  background: var(--cc-green-hover);
 }
 
 .register:disabled {
@@ -150,7 +125,7 @@
 }
 
 .error {
-  color: #ff4444;
+  color: var(--cc-red);
   font-size: 0.85rem;
   margin-top: 1rem;
 }

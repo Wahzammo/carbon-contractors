@@ -1,60 +1,17 @@
-.page {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  font-family: var(--font-geist-sans);
-  background: #0a0a0a;
-  color: #ededed;
-}
-
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 2rem;
-  border-bottom: 1px solid #222;
-}
-
-.title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  text-decoration: none;
-  color: #ededed;
-}
-
-.nav {
-  display: flex;
-  gap: 1.5rem;
-  font-size: 0.85rem;
-}
-
-.navLink {
-  color: #888;
-  text-decoration: none;
-  transition: color 0.15s;
-}
-
-.navLink:hover {
-  color: #ededed;
-}
-
-.main {
-  flex: 1;
+.content {
   max-width: 720px;
-  margin: 0 auto;
-  padding: 2rem;
-  width: 100%;
 }
 
 .pageTitle {
   font-size: 1.6rem;
-  font-weight: 600;
+  font-weight: 500;
+  letter-spacing: -0.02em;
   margin-bottom: 0.5rem;
+  color: var(--cc-text);
 }
 
 .subtitle {
-  color: #888;
+  color: var(--cc-text-secondary);
   margin-bottom: 2rem;
   line-height: 1.5;
 }
@@ -64,21 +21,23 @@
   align-items: center;
   gap: 0.75rem;
   padding: 1rem;
-  border: 1px solid #222;
+  border: 1px solid var(--cc-border-subtle);
   border-radius: 8px;
+  background: var(--cc-bg-surface);
   margin-bottom: 2.5rem;
 }
 
 .endpointLabel {
+  font-family: var(--cc-font-mono);
   font-size: 0.75rem;
-  color: #555;
+  color: var(--cc-text-faint);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
 }
 
 .endpointUrl {
-  font-family: var(--font-geist-mono);
-  color: #0052ff;
+  font-family: var(--cc-font-mono);
+  color: var(--cc-blue-bright);
   font-size: 0.9rem;
 }
 
@@ -88,30 +47,32 @@
 
 .sectionTitle {
   font-size: 1.1rem;
-  font-weight: 600;
+  font-weight: 500;
   margin-bottom: 1rem;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid #222;
+  border-bottom: 1px solid var(--cc-border-subtle);
+  color: var(--cc-text);
 }
 
 .toolCard {
-  border: 1px solid #222;
+  border: 1px solid var(--cc-border-subtle);
   border-radius: 8px;
   padding: 1rem;
   margin-bottom: 0.75rem;
+  background: var(--cc-bg-surface);
 }
 
 .toolName {
-  font-family: var(--font-geist-mono);
+  font-family: var(--cc-font-mono);
   font-size: 0.9rem;
-  font-weight: 600;
-  color: #0052ff;
+  font-weight: 500;
+  color: var(--cc-green);
   margin-bottom: 0.4rem;
 }
 
 .toolDesc {
   font-size: 0.85rem;
-  color: #aaa;
+  color: var(--cc-text-secondary);
   line-height: 1.5;
   margin-bottom: 0.5rem;
 }
@@ -123,32 +84,33 @@
 }
 
 .param {
-  font-family: var(--font-geist-mono);
+  font-family: var(--cc-font-mono);
   font-size: 0.7rem;
   padding: 0.15rem 0.4rem;
   border-radius: 3px;
-  background: #1a1a1a;
-  color: #888;
-  border: 1px solid #2a2a2a;
+  background: var(--cc-bg-elevated);
+  color: var(--cc-text-muted);
+  border: 1px solid var(--cc-border-subtle);
 }
 
 .resourceCard {
-  border: 1px solid #222;
+  border: 1px solid var(--cc-border-subtle);
   border-radius: 8px;
   padding: 1rem;
   margin-bottom: 0.75rem;
+  background: var(--cc-bg-surface);
 }
 
 .resourceUri {
-  font-family: var(--font-geist-mono);
+  font-family: var(--cc-font-mono);
   font-size: 0.8rem;
-  color: #7c6fff;
+  color: var(--cc-blue-bright);
   margin-bottom: 0.3rem;
 }
 
 .resourceDesc {
   font-size: 0.85rem;
-  color: #aaa;
+  color: var(--cc-text-secondary);
 }
 
 .chain {
@@ -156,16 +118,16 @@
   flex-wrap: wrap;
   gap: 1.5rem;
   font-size: 0.8rem;
-  color: #666;
+  color: var(--cc-text-muted);
 }
 
 .chainLabel {
-  color: #555;
+  color: var(--cc-text-faint);
 }
 
 .chainValue {
-  font-family: var(--font-geist-mono);
-  color: #888;
+  font-family: var(--cc-font-mono);
+  color: var(--cc-text-muted);
 }
 
 .toolHeader {
@@ -176,32 +138,33 @@
 }
 
 .phaseBadge {
+  font-family: var(--cc-font-mono);
   font-size: 0.65rem;
-  font-weight: 600;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   padding: 0.15rem 0.5rem;
   border-radius: 3px;
 }
 
 .phaseBadge[data-phase="discover"] {
-  background: #0d3b2e;
-  color: #34d399;
+  background: rgba(0, 210, 122, 0.12);
+  color: var(--cc-green);
 }
 
 .phaseBadge[data-phase="hire"] {
-  background: #1e1b4b;
-  color: #818cf8;
+  background: rgba(60, 138, 255, 0.12);
+  color: var(--cc-blue-bright);
 }
 
 .phaseBadge[data-phase="settle"] {
-  background: #3b2f08;
-  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.12);
+  color: var(--cc-yellow);
 }
 
 .phaseBadge[data-phase="reputation"] {
-  background: #3b1818;
-  color: #f87171;
+  background: rgba(255, 68, 68, 0.12);
+  color: var(--cc-red);
 }
 
 .flowSteps {
@@ -215,14 +178,14 @@
   align-items: center;
   gap: 0.75rem;
   font-size: 0.85rem;
-  color: #aaa;
+  color: var(--cc-text-secondary);
   padding: 0.5rem 0;
 }
 
 .flowStep code {
-  font-family: var(--font-geist-mono);
+  font-family: var(--cc-font-mono);
   font-size: 0.8rem;
-  color: #0052ff;
+  color: var(--cc-green);
 }
 
 .stepNum {
@@ -232,22 +195,23 @@
   width: 1.5rem;
   height: 1.5rem;
   border-radius: 50%;
-  background: #1a1a1a;
-  border: 1px solid #333;
+  background: var(--cc-bg-elevated);
+  border: 1px solid var(--cc-border);
+  font-family: var(--cc-font-mono);
   font-size: 0.7rem;
-  font-weight: 600;
-  color: #888;
+  font-weight: 500;
+  color: var(--cc-text-muted);
   flex-shrink: 0;
 }
 
 .codeBlock {
-  font-family: var(--font-geist-mono);
+  font-family: var(--cc-font-mono);
   font-size: 0.8rem;
-  background: #111;
-  border: 1px solid #222;
+  background: var(--cc-bg-surface);
+  border: 1px solid var(--cc-border-subtle);
   border-radius: 8px;
   padding: 1rem;
   overflow-x: auto;
-  color: #aaa;
+  color: var(--cc-text-secondary);
   line-height: 1.6;
 }

@@ -1,0 +1,129 @@
+.nav {
+  position: relative;
+  z-index: 10;
+  border-bottom: 1px solid var(--cc-border-subtle);
+}
+
+.inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px clamp(24px, 6vw, 64px);
+}
+
+.logo {
+  font-family: var(--cc-font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.20em;
+  color: var(--cc-text-secondary);
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.logo:hover {
+  color: var(--cc-text);
+}
+
+.links {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.link {
+  font-family: var(--cc-font-mono);
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.16em;
+  color: var(--cc-text-muted);
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: color 0.15s;
+}
+
+.link:hover {
+  color: var(--cc-green);
+}
+
+.wallet {
+  flex-shrink: 0;
+}
+
+.avatar {
+  width: 24px;
+  height: 24px;
+}
+
+.identity {
+  padding: 12px;
+}
+
+/* Hamburger — hidden on desktop */
+.hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+}
+
+.bar {
+  display: block;
+  width: 18px;
+  height: 2px;
+  background: var(--cc-text-secondary);
+  transition: transform 0.2s, opacity 0.2s;
+}
+
+.barOpen:nth-child(1) {
+  transform: rotate(45deg) translate(3px, 3px);
+}
+.barOpen:nth-child(2) {
+  opacity: 0;
+}
+.barOpen:nth-child(3) {
+  transform: rotate(-45deg) translate(3px, -3px);
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .hamburger {
+    display: flex;
+  }
+
+  .links {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    gap: 0;
+    background: var(--cc-bg-surface);
+    border-bottom: 1px solid var(--cc-border-subtle);
+    padding: 8px 0;
+  }
+
+  .linksOpen {
+    display: flex;
+  }
+
+  .link {
+    padding: 12px clamp(24px, 6vw, 64px);
+    width: 100%;
+  }
+
+  .link:hover {
+    background: var(--cc-bg-elevated);
+  }
+
+  .wallet {
+    display: none;
+  }
+}

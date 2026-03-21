@@ -15,7 +15,7 @@ export function WalletProviders({ children }: { children: ReactNode }) {
       config={{
         appearance: {
           name: "Carbon Contractors",
-          mode: "auto",
+          mode: "dark",
         },
       }}
     >
