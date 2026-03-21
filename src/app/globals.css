@@ -25,9 +25,8 @@
   --cc-red: #ff4444;
   --cc-yellow: #fbbf24;
 
-  /* Typography */
-  --cc-font-sans: var(--font-sans), 'Inter Tight', Inter, sans-serif;
-  --cc-font-mono: var(--font-mono), 'Doto', 'Roboto Mono', monospace;
+  /* Typography — full monospace sitewide */
+  --cc-font-mono: var(--font-mono), 'Roboto Mono', monospace;
 
   color-scheme: dark;
 }
@@ -48,7 +47,7 @@ body {
 body {
   background: var(--cc-bg);
   color: var(--cc-text);
-  font-family: var(--cc-font-sans);
+  font-family: var(--cc-font-mono);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

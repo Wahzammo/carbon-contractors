@@ -1,19 +1,13 @@
 import type { Metadata } from "next";
-import { Inter_Tight, Doto } from "next/font/google";
+import { Roboto_Mono } from "next/font/google";
 import { WalletProviders } from "@/lib/wallet/providers";
 import "@coinbase/onchainkit/styles.css";
 import "./globals.css";
 
-const interTight = Inter_Tight({
-  variable: "--font-sans",
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
-});
-
-const doto = Doto({
+const robotoMono = Roboto_Mono({
   variable: "--font-mono",
   subsets: ["latin"],
-  weight: ["300", "400", "500"],
+  weight: ["300", "400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -29,7 +23,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${interTight.variable} ${doto.variable}`}>
+      <body className={robotoMono.variable}>
         <WalletProviders>{children}</WalletProviders>
       </body>
     </html>

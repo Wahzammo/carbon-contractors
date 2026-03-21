@@ -1,12 +1,39 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 export default function ComingSoon() {
   const [email, setEmail] = useState('')
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
+  // Typewriter state
+  const [displayText, setDisplayText] = useState('')
+  const [showCursor, setShowCursor] = useState(true)
+  const typewriterDone = useRef(false)
+
+  const fullText = 'AI agents\nare hiring.'
+
+  useEffect(() => {
+    if (typewriterDone.current) return
+    let i = 0
+    const timer = setInterval(() => {
+      i++
+      setDisplayText(fullText.slice(0, i))
+      if (i >= fullText.length) {
+        clearInterval(timer)
+        typewriterDone.current = true
+      }
+    }, 65)
+    return () => clearInterval(timer)
+  }, [])
+
+  // Blinking cursor
+  useEffect(() => {
+    const timer = setInterval(() => setShowCursor(c => !c), 530)
+    return () => clearInterval(timer)
+  }, [])
 
   const handleSubmit = async () => {
     if (!email || !email.includes('@')) return
@@ -31,13 +58,16 @@ export default function ComingSoon() {
     }
   }
 
+  // Split display text into lines for rendering
+  const lines = displayText.split('\n')
+
   return (
     <>
       <style>{`
         body {
           background: #0A0B0D;
           color: #eef0f3;
-          font-family: var(--font-mono), 'Doto', 'Roboto Mono', monospace;
+          font-family: var(--font-mono), 'Roboto Mono', monospace;
           min-height: 100vh;
         }
 
@@ -57,6 +87,21 @@ export default function ComingSoon() {
           background-size: 48px 48px;
           pointer-events: none;
           z-index: 0;
+        }
+
+        .cc-scanlines {
+          position: fixed;
+          inset: 0;
+          background: repeating-linear-gradient(
+            0deg,
+            rgba(0, 0, 0, 0.15) 0px,
+            rgba(0, 0, 0, 0.15) 1px,
+            transparent 1px,
+            transparent 3px
+          );
+          pointer-events: none;
+          z-index: 9999;
+          opacity: 0.4;
         }
 
         .cc-inner { position: relative; z-index: 1; max-width: 900px; }
@@ -110,6 +155,7 @@ export default function ComingSoon() {
           letter-spacing: -0.02em;
           line-height: 1.05;
           margin-bottom: 0;
+          min-height: 2.2em;
         }
 
         .cc-accent { color: #00D27A; }
@@ -121,12 +167,10 @@ export default function ComingSoon() {
           background: #00D27A;
           vertical-align: middle;
           margin-left: 6px;
-          animation: blink 1s step-end infinite;
         }
 
-        @keyframes blink {
-          0%, 100% { opacity: 1; }
-          50%       { opacity: 0; }
+        .cc-cursor-hidden {
+          opacity: 0;
         }
 
         .cc-tagline {
@@ -154,7 +198,7 @@ export default function ComingSoon() {
           border: 1px solid #222220;
           border-right: none;
           padding: 14px 18px;
-          font-family: var(--font-mono), 'Doto', 'Roboto Mono', monospace;
+          font-family: var(--font-mono), 'Roboto Mono', monospace;
           font-size: 12px;
           letter-spacing: 0.05em;
           color: #eef0f3;
@@ -169,7 +213,7 @@ export default function ComingSoon() {
           background: #00D27A;
           border: none;
           padding: 14px 22px;
-          font-family: var(--font-mono), 'Doto', 'Roboto Mono', monospace;
+          font-family: var(--font-mono), 'Roboto Mono', monospace;
           font-size: 11px;
           font-weight: 500;
           letter-spacing: 0.14em;
@@ -223,6 +267,19 @@ export default function ComingSoon() {
           letter-spacing: 0.14em;
         }
 
+        .cc-base-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 8px;
+        }
+
+        .cc-base-mark {
+          width: 16px;
+          height: 16px;
+          opacity: 0.7;
+        }
+
         @media (max-width: 480px) {
           .cc-form { flex-direction: column; }
           .cc-input { border-right: 1px solid #222220; border-bottom: none; }
@@ -231,6 +288,7 @@ export default function ComingSoon() {
 
       <div className="cc-wrap">
         <div className="cc-grid" />
+        <div className="cc-scanlines" />
         <div className="cc-inner">
           <header className="cc-header">
             <div className="cc-logo">Carbon Contractors</div>
@@ -243,9 +301,21 @@ export default function ComingSoon() {
           <main>
             <p className="cc-prompt">{'// coming soon'}</p>
             <h1 className="cc-h1">
-              AI agents<br />
-              are <span className="cc-accent">hiring.</span>
-              <span className="cc-cursor" />
+              {lines.map((line, i) => (
+                <span key={i}>
+                  {i > 0 && <br />}
+                  {/* Color "hiring." green when it appears */}
+                  {line.includes('hiring.') ? (
+                    <>
+                      {line.replace('hiring.', '')}
+                      <span className="cc-accent">hiring.</span>
+                    </>
+                  ) : (
+                    line
+                  )}
+                </span>
+              ))}
+              <span className={`cc-cursor${showCursor ? '' : ' cc-cursor-hidden'}`} />
             </h1>
             <p className="cc-tagline">
               Human work on crypto rails.<br />
@@ -283,7 +353,12 @@ export default function ComingSoon() {
           </div>
 
           <footer className="cc-footer">
-            <span>BUILT ON BASE</span>
+            <div className="cc-base-badge">
+              <svg className="cc-base-mark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 111 111" fill="none">
+                <path d="M54.921 110.034C85.359 110.034 110.034 85.402 110.034 55.017C110.034 24.6319 85.359 0 54.921 0C26.0432 0 2.35281 22.1714 0 50.3923H72.8467V59.6416H0C2.35281 87.8625 26.0432 110.034 54.921 110.034Z" fill="white"/>
+              </svg>
+              <span>BUILT ON BASE</span>
+            </div>
             <br />
             CARBON&#8209;CONTRACTORS.COM &nbsp;&middot;&nbsp; EST. 2026
           </footer>
