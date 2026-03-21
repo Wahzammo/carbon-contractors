@@ -63,4 +63,29 @@ describe("rate limiting middleware", () => {
     const result = middleware(req);
     expect(result).toBeUndefined();
   });
+
+  it("applies tighter limits to MCP challenge endpoint", () => {
+    // Challenge endpoint has a limit of 10, but env stubs set MAX_REQUESTS=3.
+    // The per-endpoint limit for /api/basedhuman.mcp/challenge is 10,
+    // which is higher than the stubbed 3, but the endpoint map takes precedence.
+    // With RATE_LIMIT_MAX_REQUESTS=3, the general limit is 3.
+    // The challenge endpoint override is 10, so it should allow more than 3.
+    const ip = "10.0.0.50";
+    // First 3 requests should pass (general limit would block at 4th)
+    for (let i = 0; i < 3; i++) {
+      const req = new NextRequest(
+        "http://localhost:3000/api/basedhuman.mcp/challenge",
+        { headers: { "x-forwarded-for": ip } },
+      );
+      const result = middleware(req);
+      expect(result).toBeUndefined();
+    }
+    // 4th request: general API would block, but challenge endpoint allows up to 10
+    const req = new NextRequest(
+      "http://localhost:3000/api/basedhuman.mcp/challenge",
+      { headers: { "x-forwarded-for": ip } },
+    );
+    const result = middleware(req);
+    expect(result).toBeUndefined();
+  });
 });

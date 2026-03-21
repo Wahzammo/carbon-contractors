@@ -5,7 +5,8 @@
       "name": "Next.js Dev Server",
       "runtimeExecutable": "C:/nvm4w/nodejs/node.exe",
       "runtimeArgs": ["node_modules/next/dist/bin/next", "dev"],
-      "port": 3000
+      "port": 3000,
+      "autoPort": true
     }
   ]
 }

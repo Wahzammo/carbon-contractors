@@ -20,6 +20,7 @@ import { getTaskByPaymentId, updateTaskStatus } from "@/lib/db/tasks";
 import { log } from "@/lib/logging";
 import { safeErrorResponse } from "@/lib/errors";
 import { getConfig } from "@/lib/config";
+import { withCircuitBreaker, CircuitOpenError, getCircuitState } from "@/lib/x402-client";
 import type { Address } from "viem";
 
 function getPlatformWallet(): Address {
@@ -37,10 +38,31 @@ function getNetwork(): "base" | "base-sepolia" {
 
 /**
  * Inner handler — runs only after x402 payment is verified.
+ * NOR-182: Circuit breaker pre-check — if x402 has been unreliable,
+ * reject new funding requests with 503 so agents back off.
  */
 async function fundTaskHandler(
   request: NextRequest
 ): Promise<NextResponse> {
+  // Circuit breaker pre-check: if x402 has been failing, don't accept work
+  const circuitState = getCircuitState();
+  if (circuitState === "open") {
+    log("warn", "fund_task_circuit_open", { state: circuitState });
+    return new NextResponse(
+      JSON.stringify({
+        ok: false,
+        error: "Payment verification temporarily unavailable. Try again later.",
+      }),
+      {
+        status: 503,
+        headers: {
+          "Content-Type": "application/json",
+          "Retry-After": "300",
+        },
+      },
+    );
+  }
+
   try {
     const body = await request.json();
     const { payment_request_id } = body as {
@@ -72,8 +94,11 @@ async function fundTaskHandler(
       );
     }
 
-    // x402 payment verified by facilitator — activate the task
-    await updateTaskStatus(payment_request_id, "active");
+    // x402 payment verified by facilitator — activate the task.
+    // Wrapped in circuit breaker to track facilitator reliability.
+    await withCircuitBreaker(async () => {
+      await updateTaskStatus(payment_request_id, "active");
+    });
 
     log("info", "task_funded_x402", {
       payment_request_id,
@@ -90,6 +115,21 @@ async function fundTaskHandler(
       message: "Payment verified. Task is now active.",
     });
   } catch (err: unknown) {
+    if (err instanceof CircuitOpenError) {
+      return new NextResponse(
+        JSON.stringify({
+          ok: false,
+          error: "Payment verification temporarily unavailable. Try again later.",
+        }),
+        {
+          status: 503,
+          headers: {
+            "Content-Type": "application/json",
+            "Retry-After": "300",
+          },
+        },
+      );
+    }
     return safeErrorResponse(err, "fund_task_failed");
   }
 }

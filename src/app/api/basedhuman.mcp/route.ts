@@ -17,6 +17,8 @@ import { NextRequest } from "next/server";
 import { log } from "@/lib/logging";
 import { getConfig } from "@/lib/config";
 import { setSessionCount } from "@/lib/mcp/session-count";
+import { recoverAddress, hashMessage } from "viem";
+import { getSupabaseAdmin } from "@/lib/db/client";
 
 // ── Session registry ─────────────────────────────────────────────────────────
 
@@ -77,6 +79,67 @@ function createTransport(context: McpSessionContext): WebStandardStreamableHTTPS
   return transport;
 }
 
+// ── Challenge-response signature verification (NOR-178) ─────────────────────
+
+/**
+ * Verify a challenge-response signature for MCP authentication.
+ * Returns the verified wallet address on success, throws on failure.
+ */
+async function verifyChallengeSignature(
+  claimedWallet: string,
+  signature: `0x${string}`,
+  nonce: string,
+): Promise<string> {
+  const supabase = getSupabaseAdmin();
+
+  // Look up the challenge
+  const { data: challenge, error } = await supabase
+    .from("mcp_challenges")
+    .select("wallet_address, nonce, expires_at, used_at, created_at")
+    .eq("nonce", nonce)
+    .single();
+
+  if (error || !challenge) {
+    throw new Error("Challenge not found or expired");
+  }
+
+  // Check not already used
+  if (challenge.used_at) {
+    throw new Error("Challenge already consumed");
+  }
+
+  // Check not expired
+  if (new Date(challenge.expires_at) < new Date()) {
+    throw new Error("Challenge expired");
+  }
+
+  // Check wallet matches
+  if (challenge.wallet_address !== claimedWallet.toLowerCase()) {
+    throw new Error("Challenge was issued for a different wallet");
+  }
+
+  // Reconstruct the message and verify signature
+  const timestamp = Math.floor(new Date(challenge.created_at).getTime() / 1000);
+  const challengeMessage = `carbon-contractors.com wants to verify wallet ownership\nNonce: ${nonce}\nTimestamp: ${timestamp}`;
+
+  const recovered = await recoverAddress({
+    hash: hashMessage(challengeMessage),
+    signature,
+  });
+
+  if (recovered.toLowerCase() !== claimedWallet.toLowerCase()) {
+    throw new Error("Signature does not match claimed wallet");
+  }
+
+  // Mark nonce as used
+  await supabase
+    .from("mcp_challenges")
+    .update({ used_at: new Date().toISOString() })
+    .eq("nonce", nonce);
+
+  return claimedWallet;
+}
+
 // ── JSON-RPC error helpers ───────────────────────────────────────────────────
 
 function jsonRpcError(code: number, message: string, status: number): Response {
@@ -129,11 +192,27 @@ async function handler(req: NextRequest): Promise<Response> {
       return jsonRpcError(-32000, "Server at capacity. Try again later.", 503);
     }
 
-    // Extract caller wallet from header (set by authenticated agent clients).
-    // Validated as a 0x-prefixed 40-hex-char address; null if missing/invalid.
+    // ── Challenge-response wallet authentication (NOR-178) ──
+    // Agent must first GET a challenge from /api/basedhuman.mcp/challenge,
+    // sign it with their wallet, and include signature + nonce in headers.
     const rawWallet = req.headers.get("x-caller-wallet");
-    const callerWallet =
-      rawWallet && /^0x[0-9a-fA-F]{40}$/.test(rawWallet) ? rawWallet : null;
+    let callerWallet: string | null = null;
+
+    if (rawWallet && /^0x[0-9a-fA-F]{40}$/.test(rawWallet)) {
+      const signature = req.headers.get("x-caller-signature") as `0x${string}` | null;
+      const nonce = req.headers.get("x-caller-nonce");
+
+      if (signature && nonce) {
+        try {
+          callerWallet = await verifyChallengeSignature(rawWallet, signature, nonce);
+        } catch (err) {
+          log("warn", "mcp_auth_failed", { wallet: rawWallet, error: String(err) });
+          return jsonRpcError(-32001, "Signature verification failed", 401);
+        }
+      }
+      // If no signature provided, callerWallet stays null — read-only tools still work,
+      // but mutating tools (confirm_task, dispute, resolve) will reject.
+    }
 
     const sessionContext: McpSessionContext = { callerWallet };
 

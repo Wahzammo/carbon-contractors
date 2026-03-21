@@ -141,6 +141,33 @@ export interface Database {
         };
         Relationships: [];
       };
+      mcp_challenges: {
+        Row: {
+          id: string;
+          wallet_address: string;
+          nonce: string;
+          expires_at: string;
+          used_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          wallet_address: string;
+          nonce: string;
+          expires_at: string;
+          used_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          wallet_address?: string;
+          nonce?: string;
+          expires_at?: string;
+          used_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       waitlist: {
         Row: {
           id: string;

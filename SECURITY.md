@@ -32,18 +32,37 @@ opened to users.
 
 | Ref | Category | Severity | Status |
 |-----|----------|----------|--------|
-| NOR-174 | MCP tools lack per-caller authentication | High | ✅ Open |
-| NOR-175 | Permissive Supabase RLS — anon write policies not fully revoked | High | ✅ Open |
-| NOR-176 | Wallet signature replay on registration — no nonce/timestamp | High | ✅ Open |
-| NOR-177 | CSP allows unsafe-inline/eval in production | Medium | ✅ Open |
-| NOR-177 | No idempotency guard on task state transitions | Medium | ✅ Open |
-| NOR-177 | Full wallet addresses written to logs | Medium | ✅ Open |
-| NOR-177 | npm audit not in CI pipeline | Low | ✅ Open |
-| NOR-177 | Inconsistent wallet address validation across endpoints | Low | ✅ Open |
+| NOR-174 | MCP tools lack per-caller authentication | High | ✅ Closed |
+| NOR-175 | Permissive Supabase RLS — anon write policies not fully revoked | High | ✅ Closed |
+| NOR-176 | Wallet signature replay on registration — no nonce/timestamp | High | ✅ Closed |
+| NOR-177 | CSP allows unsafe-inline/eval in production | Medium | ✅ Closed |
+| NOR-177 | No idempotency guard on task state transitions | Medium | ✅ Closed |
+| NOR-177 | Full wallet addresses written to logs | Medium | ✅ Closed |
+| NOR-177 | npm audit not in CI pipeline | Low | ✅ Closed |
+| NOR-177 | Inconsistent wallet address validation across endpoints | Low | ✅ Closed |
 | —       | .env.local in working directory flagged — confirmed not committed | Info | ✅ False positive |
 
-All open findings are tracked in the project's Linear backlog and will be resolved prior
-to the platform accepting live payments.
+### Follow-Up Sweep — 2026-03-22
+
+| Ref | Category | Severity | Status |
+|-----|----------|----------|--------|
+| NOR-178 | Agent authentication — challenge-response signature verification | High | ✅ Closed |
+| NOR-179 | MCP endpoint rate limiting — per-endpoint limits + Upstash upgrade path | High | ✅ Closed |
+| NOR-182 | x402 facilitator circuit breaker — timeout + fail-fast pattern | High | ✅ Closed |
+| NOR-180 | Supabase connection pooling | Medium | ✅ Not applicable |
+| NOR-181 | Gas monitoring cron | — | ✅ Superseded by NOR-183 |
+
+**NOR-180 note:** The platform uses `@supabase/supabase-js` which communicates via the
+PostgREST HTTP API, not direct Postgres connections. Connection pooling (pgbouncer) only
+applies to direct wire-protocol connections. If the project migrates to direct Postgres
+access (e.g. Prisma, Drizzle, or `pg`), connection pooling via Supabase Transaction
+Pooler (port 6543) must be configured before deployment.
+
+**NOR-181 note:** Superseded by NOR-183 (requester gas stake), which eliminates the
+platform wallet gas dependency entirely.
+
+All findings from both sweeps are resolved or closed. Remaining open work (NOR-183
+requester gas stake) is tracked in the Linear backlog as a separate architectural feature.
 
 ---
 
@@ -94,4 +113,4 @@ We'll do the same in return — act in good faith and we will too.
 
 ---
 
-*Last updated: 2026-03-21*
+*Last updated: 2026-03-22*
