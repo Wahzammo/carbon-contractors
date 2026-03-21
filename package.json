@@ -21,7 +21,7 @@
     "@modelcontextprotocol/sdk": "^1.27.1",
     "@supabase/supabase-js": "^2.99.1",
     "@tanstack/react-query": "^5.90.21",
-    "next": "16.1.6",
+    "next": "16.2.1",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-markdown": "^10.1.0",
@@ -32,7 +32,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@nomicfoundation/hardhat-toolbox": "^7.0.0",
     "@openzeppelin/contracts": "^5.6.1",
     "@types/node": "^20",
     "@types/react": "^19",
@@ -42,8 +42,8 @@
     "dotenv": "^17.3.1",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
-    "hardhat": "^2.28.6",
-    "hardhat-deploy": "^1.0.4",
+    "hardhat": "^3.2.0",
+    "hardhat-deploy": "^2.0.3",
     "tsx": "^4.21.0",
     "typescript": "^5",
     "vitest": "^3.2.4"
