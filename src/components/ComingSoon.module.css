@@ -89,6 +89,35 @@
   min-height: 2.2em;
 }
 
+/* ── Pure CSS typewriter ─────────────────────────────────────────────────── */
+
+.typeLine1,
+.typeLine2 {
+  display: inline-block;
+  overflow: hidden;
+  white-space: nowrap;
+  border-right: none;
+  width: 0;
+}
+
+.typeLine1 {
+  animation: revealLine1 0.8s steps(9) 0.3s forwards;
+}
+
+.typeLine2 {
+  animation: revealLine2 0.9s steps(11) 1.2s forwards;
+}
+
+@keyframes revealLine1 {
+  from { width: 0; }
+  to   { width: 9ch; }
+}
+
+@keyframes revealLine2 {
+  from { width: 0; }
+  to   { width: 11ch; }
+}
+
 .accent {
   color: #00D27A;
 }
@@ -99,12 +128,16 @@
   height: 0.85em;
   background: #00D27A;
   vertical-align: middle;
-  margin-left: 6px;
+  margin-left: 2px;
+  animation: blink 1.06s step-end infinite;
 }
 
-.cursorHidden {
-  opacity: 0;
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0; }
 }
+
+/* ── Content ─────────────────────────────────────────────────────────────── */
 
 .tagline {
   font-size: 13px;
@@ -203,24 +236,41 @@
   padding: 7px 13px;
 }
 
+/* ── Footer ──────────────────────────────────────────────────────────────── */
+
 .footer {
   margin-top: 48px;
   font-size: 10px;
   color: #9A9A92;
   letter-spacing: 0.14em;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
 }
 
 .baseBadge {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 8px;
 }
 
 .baseMark {
   width: 16px;
   height: 16px;
   opacity: 0.7;
+}
+
+.basename {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--cc-blue-bright, #3c8aff);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.basename:hover {
+  color: #eef0f3;
 }
 
 @media (max-width: 480px) {

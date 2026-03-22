@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState } from 'react'
+import BuyMeACoffee from './BuyMeACoffee'
 import styles from './ComingSoon.module.css'
 
 export default function ComingSoon() {
@@ -8,33 +9,6 @@ export default function ComingSoon() {
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-
-  // Typewriter state
-  const [displayText, setDisplayText] = useState('')
-  const [showCursor, setShowCursor] = useState(true)
-  const typewriterDone = useRef(false)
-
-  const fullText = 'AI agents\nare hiring.'
-
-  useEffect(() => {
-    if (typewriterDone.current) return
-    let i = 0
-    const timer = setInterval(() => {
-      i++
-      setDisplayText(fullText.slice(0, i))
-      if (i >= fullText.length) {
-        clearInterval(timer)
-        typewriterDone.current = true
-      }
-    }, 65)
-    return () => clearInterval(timer)
-  }, [])
-
-  // Blinking cursor
-  useEffect(() => {
-    const timer = setInterval(() => setShowCursor(c => !c), 530)
-    return () => clearInterval(timer)
-  }, [])
 
   const handleSubmit = async () => {
     if (!email || !email.includes('@')) return
@@ -59,9 +33,6 @@ export default function ComingSoon() {
     }
   }
 
-  // Split display text into lines for rendering
-  const lines = displayText.split('\n')
-
   return (
     <div className={styles.wrap}>
       <div className={styles.grid} />
@@ -77,22 +48,17 @@ export default function ComingSoon() {
 
         <main>
           <p className={styles.prompt}>{'// coming soon'}</p>
+
+          {/* Pure CSS typewriter — no JS state, no hydration issues */}
           <h1 className={styles.h1}>
-            {lines.map((line, i) => (
-              <span key={i}>
-                {i > 0 && <br />}
-                {line.includes('hiring.') ? (
-                  <>
-                    {line.replace('hiring.', '')}
-                    <span className={styles.accent}>hiring.</span>
-                  </>
-                ) : (
-                  line
-                )}
-              </span>
-            ))}
-            <span className={`${styles.cursor}${showCursor ? '' : ` ${styles.cursorHidden}`}`} />
+            <span className={styles.typeLine1}>AI agents</span>
+            <br />
+            <span className={styles.typeLine2}>
+              are <span className={styles.accent}>hiring.</span>
+            </span>
+            <span className={styles.cursor} />
           </h1>
+
           <p className={styles.tagline}>
             Human work on crypto rails.<br />
             <b>USDC payments</b> · <b>Base</b> · <b>x402 protocol</b>
@@ -129,12 +95,23 @@ export default function ComingSoon() {
         </div>
 
         <footer className={styles.footer}>
+          <BuyMeACoffee />
+
           <div className={styles.baseBadge}>
             <svg className={styles.baseMark} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 111 111" fill="none">
               <path d="M54.921 110.034C85.359 110.034 110.034 85.402 110.034 55.017C110.034 24.6319 85.359 0 54.921 0C26.0432 0 2.35281 22.1714 0 50.3923H72.8467V59.6416H0C2.35281 87.8625 26.0432 110.034 54.921 110.034Z" fill="white"/>
             </svg>
             <span>BUILT ON BASE</span>
           </div>
+
+          <a
+            href="https://www.base.org/name/wahzammo"
+            className={styles.basename}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            wahzammo.base.eth
+          </a>
           <br />
           CARBON&#8209;CONTRACTORS.COM &nbsp;&middot;&nbsp; EST. 2026
         </footer>
