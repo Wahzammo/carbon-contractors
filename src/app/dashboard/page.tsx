@@ -56,6 +56,13 @@ const USDC_DECIMALS = 6;
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
+interface Profile {
+  wallet: string;
+  skills: string[];
+  rate_usdc: number;
+  availability: string;
+}
+
 interface OnChainState {
   state: string;
   amount_wei: string;
@@ -140,6 +147,7 @@ export default function DashboardPage() {
   const { address, isConnected } = useAccount();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [reputation, setReputation] = useState<Reputation | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [stakeInput, setStakeInput] = useState("");
@@ -166,10 +174,12 @@ export default function DashboardPage() {
     Promise.all([
       fetch(`/api/tasks?wallet=${address}`).then((r) => r.json()),
       fetch(`/api/reputation?wallet=${address}`).then((r) => r.json()),
+      fetch(`/api/profile?wallet=${address}`).then((r) => r.json()),
     ])
-      .then(([tasksData, repData]) => {
+      .then(([tasksData, repData, profileData]) => {
         if (tasksData.ok) setTasks(tasksData.tasks);
         if (repData.ok) setReputation(repData.reputation);
+        if (profileData.ok) setProfile(profileData.profile);
         if (!tasksData.ok && !repData.ok) {
           setError("Failed to fetch data");
         }
@@ -409,6 +419,23 @@ export default function DashboardPage() {
                     </div>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* ── Profile ─────────────────────────────────────────────── */}
+            {profile && (
+              <div className={styles.profileCard}>
+                <h3 className={styles.profileTitle}>Your Profile</h3>
+                <div className={styles.profileSkills}>
+                  {profile.skills.map((skill) => (
+                    <span key={skill} className={styles.profileSkillBadge}>
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+                <div className={styles.profileRate}>
+                  {profile.rate_usdc} USDC/hr
+                </div>
               </div>
             )}
 

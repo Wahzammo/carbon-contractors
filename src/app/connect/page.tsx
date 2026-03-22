@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useAccount, useSignMessage } from "wagmi";
 import PageShell from "@/components/PageShell";
 import styles from "./connect.module.css";
@@ -27,6 +28,7 @@ const AVAILABLE_SKILLS = [
 ];
 
 export default function ConnectPage() {
+  const router = useRouter();
   const { address, isConnected } = useAccount();
   const { signMessageAsync } = useSignMessage();
 
@@ -36,6 +38,13 @@ export default function ConnectPage() {
     "idle" | "signing" | "submitting" | "success" | "error"
   >("idle");
   const [errorMsg, setErrorMsg] = useState("");
+
+  // Auto-redirect to dashboard 2s after successful registration
+  useEffect(() => {
+    if (status !== "success") return;
+    const timer = setTimeout(() => router.push("/dashboard"), 2000);
+    return () => clearTimeout(timer);
+  }, [status, router]);
 
   function toggleSkill(skill: string) {
     setSelectedSkills((prev) =>
@@ -55,7 +64,8 @@ export default function ConnectPage() {
         wallet: address,
         skills: selectedSkills,
         rate_usdc: Number(rateUsdc),
-        timestamp: Date.now(),
+        nonce: crypto.randomUUID(),
+        timestamp: Math.floor(Date.now() / 1000),
       });
 
       const signature = await signMessageAsync({ message });
@@ -103,6 +113,7 @@ export default function ConnectPage() {
               your skills and hire you directly.
             </p>
             <p className={styles.mono}>{address}</p>
+            <p className={styles.subtle}>Redirecting to dashboard...</p>
           </div>
         ) : (
           <div className={styles.form}>
