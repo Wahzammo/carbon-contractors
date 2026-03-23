@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { verifyMessage } from "viem";
 import { getSupabaseAdmin } from "@/lib/db/client";
 import { log } from "@/lib/logging";
+import { validateCategorySelection } from "@/lib/categories";
 
 /** Maximum age (in seconds) for a registration message to be considered valid. */
 const MAX_MESSAGE_AGE_S = 300; // 5 minutes
@@ -13,7 +14,7 @@ interface RegisterBody {
 }
 
 interface RegistrationPayload {
-  skills: string[];
+  categories: string[];
   rate_usdc: number;
   nonce: string;
   timestamp: number;
@@ -57,8 +58,7 @@ export async function POST(req: NextRequest): Promise<Response> {
   try {
     parsed = JSON.parse(message);
     if (
-      !Array.isArray(parsed.skills) ||
-      parsed.skills.length === 0 ||
+      !Array.isArray(parsed.categories) ||
       typeof parsed.rate_usdc !== "number" ||
       parsed.rate_usdc <= 0
     ) {
@@ -72,9 +72,15 @@ export async function POST(req: NextRequest): Promise<Response> {
     }
   } catch {
     return Response.json(
-      { error: "Invalid registration payload. Required: skills, rate_usdc, nonce, timestamp." },
+      { error: "Invalid registration payload. Required: categories, rate_usdc, nonce, timestamp." },
       { status: 400 },
     );
+  }
+
+  // Validate category selection (min 1, max 2, valid slugs)
+  const catResult = validateCategorySelection(parsed.categories);
+  if (!catResult.valid) {
+    return Response.json({ error: catResult.error }, { status: 400 });
   }
 
   // Verify timestamp is within the acceptable window
@@ -127,7 +133,7 @@ export async function POST(req: NextRequest): Promise<Response> {
   const { error } = await supabase.from("humans").upsert(
     {
       wallet: wallet,
-      skills: parsed.skills,
+      categories: parsed.categories,
       rate_usdc: parsed.rate_usdc,
       availability: "available",
       reputation_score: 50, // default starting reputation
@@ -148,7 +154,7 @@ export async function POST(req: NextRequest): Promise<Response> {
 
   log("info", "worker_registered", {
     wallet,
-    skills: parsed.skills,
+    categories: parsed.categories,
     rate_usdc: parsed.rate_usdc,
   });
 

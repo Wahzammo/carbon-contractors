@@ -19,7 +19,7 @@ export interface Database {
         Row: {
           id: string;
           wallet: string;
-          skills: string[];
+          categories: string[];
           rate_usdc: number;
           availability: Availability;
           reputation_score: number;
@@ -29,7 +29,7 @@ export interface Database {
         Insert: {
           id?: string;
           wallet: string;
-          skills: string[];
+          categories: string[];
           rate_usdc: number;
           availability?: Availability;
           reputation_score?: number;
@@ -39,7 +39,7 @@ export interface Database {
         Update: {
           id?: string;
           wallet?: string;
-          skills?: string[];
+          categories?: string[];
           rate_usdc?: number;
           availability?: Availability;
           reputation_score?: number;

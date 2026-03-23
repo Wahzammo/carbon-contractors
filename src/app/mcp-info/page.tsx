@@ -5,21 +5,21 @@ const TOOLS = [
   {
     name: "search_whitepages",
     description:
-      "Query the Base-Human whitepages for verified wallet addresses by skill. Returns JSON array of matching humans sorted by reputation.",
-    params: ["skill: string"],
+      "Query the Base-Human whitepages for verified wallet addresses by service category. Returns JSON array of matching humans sorted by reputation.",
+    params: ["category: string"],
     phase: "Discover",
   },
   {
     name: "get_contractor",
     description:
-      "Look up a single contractor's full profile by wallet address or UUID. Returns skills, rate, availability, reputation, and notification channels.",
+      "Look up a single contractor's full profile by wallet address or UUID. Returns categories, rate, availability, reputation, and notification channels.",
     params: ["wallet?: 0x...", "id?: uuid"],
     phase: "Discover",
   },
   {
-    name: "list_skills",
+    name: "list_categories",
     description:
-      "Returns the canonical skill taxonomy — all unique skills registered by contractors on the platform.",
+      "Returns the canonical service category taxonomy — all unique categories registered by contractors on the platform.",
     params: [],
     phase: "Discover",
   },

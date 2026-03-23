@@ -4,35 +4,15 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAccount, useSignMessage } from "wagmi";
 import PageShell from "@/components/PageShell";
+import { CATEGORIES, MAX_CATEGORIES } from "@/lib/categories";
 import styles from "./connect.module.css";
-
-const AVAILABLE_SKILLS = [
-  "solidity",
-  "smart-contracts",
-  "auditing",
-  "typescript",
-  "nextjs",
-  "api-design",
-  "zk-proofs",
-  "circom",
-  "cryptography",
-  "python",
-  "data-analysis",
-  "ml",
-  "defi",
-  "subgraph",
-  "rust",
-  "golang",
-  "design",
-  "copywriting",
-];
 
 export default function ConnectPage() {
   const router = useRouter();
   const { address, isConnected } = useAccount();
   const { signMessageAsync } = useSignMessage();
 
-  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [rateUsdc, setRateUsdc] = useState("");
   const [status, setStatus] = useState<
     "idle" | "signing" | "submitting" | "success" | "error"
@@ -46,14 +26,16 @@ export default function ConnectPage() {
     return () => clearTimeout(timer);
   }, [status, router]);
 
-  function toggleSkill(skill: string) {
-    setSelectedSkills((prev) =>
-      prev.includes(skill) ? prev.filter((s) => s !== skill) : [...prev, skill],
-    );
+  function toggleCategory(slug: string) {
+    setSelectedCategories((prev) => {
+      if (prev.includes(slug)) return prev.filter((s) => s !== slug);
+      if (prev.length >= MAX_CATEGORIES) return prev;
+      return [...prev, slug];
+    });
   }
 
   async function handleRegister() {
-    if (!address || selectedSkills.length === 0 || !rateUsdc) return;
+    if (!address || selectedCategories.length === 0 || !rateUsdc) return;
 
     setStatus("signing");
     setErrorMsg("");
@@ -62,7 +44,7 @@ export default function ConnectPage() {
       const message = JSON.stringify({
         action: "register_worker",
         wallet: address,
-        skills: selectedSkills,
+        categories: selectedCategories,
         rate_usdc: Number(rateUsdc),
         nonce: crypto.randomUUID(),
         timestamp: Math.floor(Date.now() / 1000),
@@ -90,6 +72,8 @@ export default function ConnectPage() {
     }
   }
 
+  const atMax = selectedCategories.length >= MAX_CATEGORIES;
+
   return (
     <PageShell>
       <div className={styles.content}>
@@ -97,7 +81,7 @@ export default function ConnectPage() {
           <div className={styles.hero}>
             <h2>Register as a Worker</h2>
             <p>
-              Connect your wallet to register your skills on the Base-Human
+              Connect your wallet to register your services on the Base-Human
               whitepages. AI agents will be able to discover and hire you via
               MCP.
             </p>
@@ -110,27 +94,35 @@ export default function ConnectPage() {
             <h2>Registered</h2>
             <p>
               Your wallet is now in the whitepages. AI agents can find you by
-              your skills and hire you directly.
+              your services and hire you directly.
             </p>
             <p className={styles.mono}>{address}</p>
             <p className={styles.subtle}>Redirecting to dashboard...</p>
           </div>
         ) : (
           <div className={styles.form}>
-            <h2>Your Skills</h2>
-            <p>Select the skills you want to offer. Agents search by these.</p>
-            <div className={styles.skills}>
-              {AVAILABLE_SKILLS.map((skill) => (
-                <button
-                  key={skill}
-                  className={`${styles.skill} ${selectedSkills.includes(skill) ? styles.skillActive : ""}`}
-                  onClick={() => toggleSkill(skill)}
-                  type="button"
-                >
-                  {skill}
-                </button>
-              ))}
+            <h2>Your Services</h2>
+            <p>Choose up to 2 service categories. Agents find you by these.</p>
+            <div className={styles.categories}>
+              {CATEGORIES.map((cat) => {
+                const selected = selectedCategories.includes(cat.slug);
+                const disabled = !selected && atMax;
+                return (
+                  <button
+                    key={cat.slug}
+                    className={`${styles.category} ${selected ? styles.categoryActive : ""} ${disabled ? styles.categoryDisabled : ""}`}
+                    onClick={() => toggleCategory(cat.slug)}
+                    disabled={disabled}
+                    type="button"
+                  >
+                    {cat.label}
+                  </button>
+                );
+              })}
             </div>
+            <p className={styles.selectionHint}>
+              {selectedCategories.length} / {MAX_CATEGORIES} selected
+            </p>
 
             <h2>Hourly Rate (USDC)</h2>
             <input
@@ -146,7 +138,7 @@ export default function ConnectPage() {
             <button
               className={styles.register}
               disabled={
-                selectedSkills.length === 0 ||
+                selectedCategories.length === 0 ||
                 !rateUsdc ||
                 status === "signing" ||
                 status === "submitting"

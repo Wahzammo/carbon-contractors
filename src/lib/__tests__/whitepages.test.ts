@@ -13,10 +13,10 @@ vi.stubEnv("NEXT_PUBLIC_BASE_NETWORK", "testnet");
 vi.stubEnv("NEXT_PUBLIC_USDC_ADDRESS", "0x036CbD53842c5426634e7929541eC2318f3dCF7e");
 
 import {
-  searchBySkill,
+  searchByCategory,
   getAllHumans,
   getHumanByWallet,
-  getDistinctSkills,
+  getDistinctCategories,
 } from "@/lib/db/whitepages";
 
 function makeChain(result: { data: unknown; error: unknown }) {
@@ -41,17 +41,17 @@ describe("whitepages", () => {
     vi.clearAllMocks();
   });
 
-  it("searchBySkill queries with contains and returns results", async () => {
+  it("searchByCategory queries with contains and returns results", async () => {
     const humans = [
-      { wallet: "0xA", skills: ["solidity"], reputation_score: 90 },
+      { wallet: "0xA", categories: ["delivery-errands"], reputation_score: 90 },
     ];
     const chain = makeChain({ data: humans, error: null });
     mockFrom.mockReturnValue(chain);
 
-    const results = await searchBySkill("solidity");
+    const results = await searchByCategory("delivery-errands");
     expect(results).toEqual(humans);
     expect(mockFrom).toHaveBeenCalledWith("humans");
-    expect(chain.contains).toHaveBeenCalledWith("skills", ["solidity"]);
+    expect(chain.contains).toHaveBeenCalledWith("categories", ["delivery-errands"]);
     expect(chain.order).toHaveBeenCalledTimes(2);
   });
 
@@ -73,15 +73,15 @@ describe("whitepages", () => {
     expect(result).toEqual(human);
   });
 
-  it("getDistinctSkills returns deduplicated sorted skills", async () => {
+  it("getDistinctCategories returns deduplicated sorted categories", async () => {
     const humans = [
-      { skills: ["solidity", "typescript"] },
-      { skills: ["typescript", "rust"] },
+      { categories: ["delivery-errands", "cleaning"] },
+      { categories: ["cleaning", "pet-services"] },
     ];
     const chain = makeChain({ data: humans, error: null });
     mockFrom.mockReturnValue(chain);
 
-    const skills = await getDistinctSkills();
-    expect(skills).toEqual(["rust", "solidity", "typescript"]);
+    const categories = await getDistinctCategories();
+    expect(categories).toEqual(["cleaning", "delivery-errands", "pet-services"]);
   });
 });

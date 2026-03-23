@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     ok: true,
     profile: {
       wallet: human.wallet,
-      skills: human.skills,
+      categories: human.categories,
       rate_usdc: human.rate_usdc,
       availability: human.availability,
     },
