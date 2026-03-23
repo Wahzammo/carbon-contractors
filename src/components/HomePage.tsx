@@ -37,7 +37,7 @@ export default function HomePage() {
               <h3 className={styles.stepTitle}>Discover</h3>
               <p className={styles.stepDesc}>
                 AI agents search the worker registry via MCP to find humans with
-                the right skills.
+                the right services.
               </p>
             </div>
           </div>
@@ -84,7 +84,7 @@ export default function HomePage() {
           <div className={styles.card}>
             <h3 className={styles.cardTitle}>No platform lock-in</h3>
             <p className={styles.cardDesc}>
-              Open protocol. Smart wallet. Your skills, your wallet, your
+              Open protocol. Smart wallet. Your services, your wallet, your
               reputation. We never hold your funds.
             </p>
           </div>

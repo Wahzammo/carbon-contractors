@@ -8,11 +8,11 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import {
-  searchBySkill,
+  searchByCategory,
   getAllHumans,
   getHumanByWallet,
   getHumanById,
-  getDistinctSkills,
+  getDistinctCategories,
 } from "@/lib/db/whitepages";
 import { initiateX402Payment } from "@/lib/payments/x402";
 import {
@@ -56,17 +56,17 @@ export function createMcpServer(context?: McpSessionContext): McpServer {
   // ─── Tool: search_whitepages ──────────────────────────────────────────────
   server.tool(
     "search_whitepages",
-    "Query the Base-Human whitepages for verified wallet addresses by skill. Returns JSON array of matching humans sorted by reputation desc.",
+    "Query the Base-Human whitepages for verified wallet addresses by service category. Returns JSON array of matching humans sorted by reputation desc.",
     {
-      skill: z
+      category: z
         .string()
         .min(1)
         .describe(
-          "Skill slug to search for, e.g. 'solidity', 'typescript', 'zk-proofs'"
+          "Category slug to search for, e.g. 'delivery-errands', 'cleaning', 'pet-services'"
         ),
     },
-    async ({ skill }) => {
-      const results = await searchBySkill(skill);
+    async ({ category }) => {
+      const results = await searchByCategory(category);
 
       if (results.length === 0) {
         return {
@@ -75,7 +75,7 @@ export function createMcpServer(context?: McpSessionContext): McpServer {
               type: "text",
               text: JSON.stringify({
                 ok: false,
-                skill,
+                category,
                 count: 0,
                 results: [],
               }),
@@ -90,11 +90,11 @@ export function createMcpServer(context?: McpSessionContext): McpServer {
             type: "text",
             text: JSON.stringify({
               ok: true,
-              skill,
+              category,
               count: results.length,
               results: results.map((h) => ({
                 wallet: h.wallet,
-                skills: h.skills,
+                categories: h.categories,
                 rate_usdc: h.rate_usdc,
                 availability: h.availability,
                 reputation_score: h.reputation_score,
@@ -447,7 +447,7 @@ export function createMcpServer(context?: McpSessionContext): McpServer {
   // ─── Tool: get_contractor ────────────────────────────────────────────────
   server.tool(
     "get_contractor",
-    "Look up a single contractor's full profile by wallet address or UUID. Returns skills, rate, availability, reputation score, and notification channels.",
+    "Look up a single contractor's full profile by wallet address or UUID. Returns categories, rate, availability, reputation score, and notification channels.",
     {
       wallet: z
         .string()
@@ -506,7 +506,7 @@ export function createMcpServer(context?: McpSessionContext): McpServer {
                 contractor: {
                   id: human.id,
                   wallet: human.wallet,
-                  skills: human.skills,
+                  categories: human.categories,
                   rate_usdc: human.rate_usdc,
                   availability: human.availability,
                   reputation_score: human.reputation_score,
@@ -537,22 +537,22 @@ export function createMcpServer(context?: McpSessionContext): McpServer {
     }
   );
 
-  // ─── Tool: list_skills ─────────────────────────────────────────────────
+  // ─── Tool: list_categories ──────────────────────────────────────────────
   server.tool(
-    "list_skills",
-    "Returns the canonical skill taxonomy — all unique skills registered by contractors on the platform. Use this to discover valid skill slugs before calling search_whitepages.",
+    "list_categories",
+    "Returns the canonical service category taxonomy — all unique categories registered by contractors on the platform. Use this to discover valid category slugs before calling search_whitepages.",
     {},
     async () => {
       try {
-        const skills = await getDistinctSkills();
+        const categories = await getDistinctCategories();
         return {
           content: [
             {
               type: "text" as const,
               text: JSON.stringify({
                 ok: true,
-                count: skills.length,
-                skills,
+                count: categories.length,
+                categories,
               }),
             },
           ],

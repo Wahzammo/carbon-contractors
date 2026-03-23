@@ -8,30 +8,30 @@ import { getSupabase } from "./client";
 
 export interface HumanRecord {
   wallet: string;
-  skills: string[];
+  categories: string[];
   rate_usdc: number;
   availability: "available" | "busy" | "offline";
   reputation_score: number;
 }
 
 /**
- * searchBySkill
- * Returns humans whose skills array contains the search term.
- * Postgres array containment: skills @> ARRAY[skill].
+ * searchByCategory
+ * Returns humans whose categories array contains the search term.
+ * Postgres array containment: categories @> ARRAY[category].
  * Sorted by reputation_score desc, then rate_usdc asc.
  */
-export async function searchBySkill(skill: string): Promise<HumanRecord[]> {
-  const normalized = skill.toLowerCase().trim();
+export async function searchByCategory(category: string): Promise<HumanRecord[]> {
+  const normalized = category.toLowerCase().trim();
   const supabase = getSupabase();
 
   const { data, error } = await supabase
     .from("humans")
-    .select("wallet, skills, rate_usdc, availability, reputation_score")
-    .contains("skills", [normalized])
+    .select("wallet, categories, rate_usdc, availability, reputation_score")
+    .contains("categories", [normalized])
     .order("reputation_score", { ascending: false })
     .order("rate_usdc", { ascending: true });
 
-  if (error) throw new Error(`searchBySkill failed: ${error.message}`);
+  if (error) throw new Error(`searchByCategory failed: ${error.message}`);
   return (data ?? []) as HumanRecord[];
 }
 
@@ -46,7 +46,7 @@ export async function getHumanByWallet(
 
   const { data, error } = await supabase
     .from("humans")
-    .select("id, wallet, skills, rate_usdc, availability, reputation_score")
+    .select("id, wallet, categories, rate_usdc, availability, reputation_score")
     .eq("wallet", wallet.toLowerCase())
     .single();
 
@@ -67,7 +67,7 @@ export async function getHumanById(
 
   const { data, error } = await supabase
     .from("humans")
-    .select("id, wallet, skills, rate_usdc, availability, reputation_score")
+    .select("id, wallet, categories, rate_usdc, availability, reputation_score")
     .eq("id", id)
     .single();
 
@@ -78,25 +78,25 @@ export async function getHumanById(
 }
 
 /**
- * getDistinctSkills
- * Returns the canonical skill taxonomy — all unique skills across all contractors.
+ * getDistinctCategories
+ * Returns the canonical category taxonomy — all unique categories across all contractors.
  */
-export async function getDistinctSkills(): Promise<string[]> {
+export async function getDistinctCategories(): Promise<string[]> {
   const supabase = getSupabase();
 
   const { data, error } = await supabase
     .from("humans")
-    .select("skills");
+    .select("categories");
 
-  if (error) throw new Error(`getDistinctSkills failed: ${error.message}`);
+  if (error) throw new Error(`getDistinctCategories failed: ${error.message}`);
 
-  const skillSet = new Set<string>();
+  const categorySet = new Set<string>();
   for (const row of data ?? []) {
-    for (const s of (row as { skills: string[] }).skills) {
-      skillSet.add(s);
+    for (const c of (row as { categories: string[] }).categories) {
+      categorySet.add(c);
     }
   }
-  return [...skillSet].sort();
+  return [...categorySet].sort();
 }
 
 /**
@@ -108,7 +108,7 @@ export async function getAllHumans(): Promise<HumanRecord[]> {
 
   const { data, error } = await supabase
     .from("humans")
-    .select("wallet, skills, rate_usdc, availability, reputation_score")
+    .select("wallet, categories, rate_usdc, availability, reputation_score")
     .order("reputation_score", { ascending: false });
 
   if (error) throw new Error(`getAllHumans failed: ${error.message}`);

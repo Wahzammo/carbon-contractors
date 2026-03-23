@@ -58,7 +58,7 @@ const USDC_DECIMALS = 6;
 
 interface Profile {
   wallet: string;
-  skills: string[];
+  categories: string[];
   rate_usdc: number;
   availability: string;
 }
@@ -426,10 +426,10 @@ export default function DashboardPage() {
             {profile && (
               <div className={styles.profileCard}>
                 <h3 className={styles.profileTitle}>Your Profile</h3>
-                <div className={styles.profileSkills}>
-                  {profile.skills.map((skill) => (
-                    <span key={skill} className={styles.profileSkillBadge}>
-                      {skill}
+                <div className={styles.profileCategories}>
+                  {profile.categories.map((cat) => (
+                    <span key={cat} className={styles.profileCategoryBadge}>
+                      {cat}
                     </span>
                   ))}
                 </div>
@@ -447,7 +447,7 @@ export default function DashboardPage() {
                 <p>No tasks assigned yet.</p>
                 <p>
                   Make sure you&apos;ve{" "}
-                  <Link href="/connect">registered your skills</Link> so agents
+                  <Link href="/connect">registered your services</Link> so agents
                   can find you.
                 </p>
               </div>

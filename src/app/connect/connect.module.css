@@ -56,15 +56,15 @@
   margin-bottom: 1rem;
 }
 
-.skills {
+.categories {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 }
 
-.skill {
-  padding: 0.4rem 0.8rem;
+.category {
+  padding: 0.5rem 1rem;
   border-radius: 6px;
   border: 1px solid var(--cc-border);
   background: transparent;
@@ -74,15 +74,26 @@
   transition: all 0.15s;
 }
 
-.skill:hover {
+.category:hover:not(:disabled) {
   border-color: var(--cc-text-muted);
   color: var(--cc-text);
 }
 
-.skillActive {
+.categoryActive {
   background: var(--cc-green);
   border-color: var(--cc-green);
   color: #0A0B0D;
+}
+
+.categoryDisabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.selectionHint {
+  font-size: 0.75rem;
+  color: var(--cc-text-muted);
+  margin-bottom: 1rem;
 }
 
 .input {
