@@ -105,6 +105,7 @@ The server speaks Streamable HTTP (SSE), not WebSocket. Any MCP-compatible clien
 - [x] Coinbase Smart Wallet integration (passkey auth)
 - [x] Worker self-registration flow (wallet signature verification)
 - [x] On-chain USDC escrow contract (Base Sepolia)
+- [x] x402 payment protocol (HTTP 402 → agent auto-pays → escrow funds)
 - [x] Task lifecycle MCP tools (create → fund → complete)
 - [x] Notification channels with agent-to-agent auto-booking
 - [x] Reputation staking + on-chain history (ReputationStake.sol)
