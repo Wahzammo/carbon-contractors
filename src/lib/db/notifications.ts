@@ -6,7 +6,7 @@
  * human approval — the orchestrator can book directly.
  */
 
-import { getSupabase, getSupabaseAdmin } from "./client";
+import { getSupabaseAdmin } from "./client";
 
 export interface NotificationChannel {
   id: string;
@@ -59,7 +59,7 @@ export async function registerNotificationChannel(
 export async function getChannelsForContractor(
   contractorId: string
 ): Promise<NotificationChannel[]> {
-  const supabase = getSupabase();
+  const supabase = getSupabaseAdmin();
 
   const { data, error } = await supabase
     .from("notification_channels")
@@ -79,7 +79,7 @@ export async function getChannelsForContractor(
 export async function getAutoBookableContractors(): Promise<
   NotificationChannel[]
 > {
-  const supabase = getSupabase();
+  const supabase = getSupabaseAdmin();
 
   const { data, error } = await supabase
     .from("notification_channels")
