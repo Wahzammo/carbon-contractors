@@ -447,9 +447,7 @@ export function createMcpServer(context?: McpSessionContext): McpServer {
                 ok: true,
                 channel: {
                   id: channel.id,
-                  contractor_id: channel.contractor_id,
                   type: channel.type,
-                  address: channel.address,
                   accepts_auto_booking: channel.accepts_auto_booking,
                 },
               }),

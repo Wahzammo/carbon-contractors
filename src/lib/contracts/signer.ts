@@ -15,7 +15,7 @@ import {
   type Address,
   type Hash,
 } from "viem";
-import { privateKeyToAccount } from "viem/accounts";
+import { privateKeyToAccount, nonceManager } from "viem/accounts";
 import { baseSepolia, base } from "viem/chains";
 import { CARBON_ESCROW_ABI } from "./escrow-abi";
 import { getConfig } from "@/lib/config";
@@ -47,7 +47,7 @@ function getPlatformAccount() {
       "DEPLOYER_PRIVATE_KEY not set. Required for server-side escrow operations."
     );
   }
-  return privateKeyToAccount(key as `0x${string}`);
+  return privateKeyToAccount(key as `0x${string}`, { nonceManager });
 }
 
 function getWalletClient() {
