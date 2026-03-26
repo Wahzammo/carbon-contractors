@@ -236,7 +236,11 @@ export function createMcpServer(context?: McpSessionContext): McpServer {
                   amount_usdc: dbTask.amount_usdc,
                   from_agent: dbTask.from_agent_wallet,
                   to_worker: dbTask.to_human_wallet,
-                  task_description: dbTask.task_description,
+                  // Only include task_description for the owning agent
+                  ...(context?.callerWallet &&
+                    dbTask.from_agent_wallet.toLowerCase() === context.callerWallet.toLowerCase()
+                    ? { task_description: dbTask.task_description }
+                    : {}),
                   deadline_unix: dbTask.deadline_unix,
                   created_at: dbTask.created_at,
                 },
