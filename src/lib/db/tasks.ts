@@ -3,7 +3,7 @@
  * CRUD operations for the tasks table.
  */
 
-import { getSupabase, getSupabaseAdmin } from "./client";
+import { getSupabaseAdmin } from "./client";
 import type { TaskStatus } from "./types";
 
 export interface TaskRecord {
@@ -57,7 +57,7 @@ export async function createTask(input: CreateTaskInput): Promise<TaskRecord> {
 export async function getTaskByPaymentId(
   paymentRequestId: string,
 ): Promise<TaskRecord | null> {
-  const supabase = getSupabase();
+  const supabase = getSupabaseAdmin();
 
   const { data, error } = await supabase
     .from("tasks")
@@ -129,7 +129,7 @@ export async function updateTaskStatus(
 export async function getTasksByWallet(
   wallet: string,
 ): Promise<TaskRecord[]> {
-  const supabase = getSupabase();
+  const supabase = getSupabaseAdmin();
 
   const { data, error } = await supabase
     .from("tasks")
