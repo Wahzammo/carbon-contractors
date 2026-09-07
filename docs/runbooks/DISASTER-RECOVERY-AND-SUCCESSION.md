@@ -4,7 +4,7 @@
 **Governance Authority:** `ADR-0006` (Continuity, succession, and the right to fork)  
 **Related Specifications:** `ADR-0001` (A1.2, D4, D6, D9), `ADR-0002` (D8, D9), `ADR-0003` (D4, D5), `Key-Compromise-Recovery.md`, `HSM-Deployer-Checklist.md`, `INVARIANT-ALERTS.md`  
 **Tracking Ticket:** `CC-091`  
-**Last Updated:** 2026-08-23  
+**Last Updated:** 2026-09-08 — synced to `ADR-0006` as accepted 2026-08-26 + Amendments 1–2: D2 custody is a **2-of-4 Safe on four independently-initialised Tangem cards**; D3's arbitration clock starts at `disputeTask`, is a 7-day constant, and pays out via `releaseAfterArbitration`.
 
 ---
 
@@ -44,14 +44,14 @@ When the platform hosting is completely destroyed or unreachable, on-chain settl
 
 In early contract revisions, tasks in `Disputed` or `Arbitrating` required `resolveDispute` (`onlyOwner`) with no fallback, creating the single genuine QuadrigaCX vulnerability (funds locked forever if owner key is lost).
 
-**Contract Enforcement (`ADR-0006` D3, scoped into `CC-034`):**
-1. When `beginArbitration(taskId)` is invoked, an immutable on-chain **arbitration deadline** is set (`block.timestamp + ARBITRATION_TIMEOUT_WINDOW`).
-2. If the platform or 2-of-3 multisig owner fails to call `resolveDispute` before the arbitration deadline expires:
-   * The task transitions to a claimable timeout state.
-   * `releaseAfterArbitrationTimeout(taskId)` becomes callable by `task.worker` via pull-payment.
-3. **Rationale:** Defaulting to worker rather than agent prevents griefing-by-inaction and ensures founder death or operational failure pays out the party who completed the labor.
+**Contract Enforcement (`ADR-0006` D3, amended by Amendment 1; implemented in `contracts/CarbonEscrow.sol`):**
+1. The clock starts when the task *becomes* disputed: `disputeTask` stamps `disputedAt`. **`ARBITRATION_WINDOW` is a contract constant of 7 days** — the arbitrator does not set, start, or extend its own deadline (`ADR-0006` A1.2).
+2. If the Safe owner fails to call `resolveDispute` before `arbitrationDeadline(taskId)` expires:
+   * `resolveDispute` and `beginArbitration` revert with `ArbitrationWindowClosed` past the deadline (`ADR-0006` A1.4).
+   * `releaseAfterArbitration(taskId)` becomes callable by `task.worker` via pull-payment.
+3. **Rationale:** Defaulting to worker rather than agent prevents griefing-by-inaction and ensures founder death or operational failure pays out the party who completed the labor. The clock starts at `disputeTask` rather than the optional `beginArbitration` marker so an owner cannot withhold the clock by inaction (`ADR-0006` A1.1).
 
-### 2.3 Role Separation & 2-of-3 Multisig Ownership (`ADR-0006` D2, `CC-090`)
+### 2.3 Role Separation & 2-of-4 Multisig Ownership (`ADR-0006` D2, `CC-090`)
 
 The contracts strictly separate operational signing from custodial ownership:
 
@@ -60,7 +60,7 @@ The contracts strictly separate operational signing from custodial ownership:
 │                    On-Chain Escrow System                   │
 │                                                             │
 │  ┌────────────────────────┐      ┌───────────────────────┐  │
-│  │   2-of-3 Safe Owner    │      │  Verdict Signer Key   │  │
+│  │   2-of-4 Safe Owner    │      │  Verdict Signer Key   │  │
 │  │   (Contract Owner)     │      │  (Cloud KMS / HSM)    │  │
 │  └───────────┬────────────┘      └───────────┬───────────┘  │
 │              │                               │              │
@@ -72,11 +72,12 @@ The contracts strictly separate operational signing from custodial ownership:
        Emergency & Overrides           Automated Workflows
 ```
 
-* **Contract Owner (Cold 2-of-3 Multisig):**
+* **Contract Owner (Cold 2-of-4 Safe on four Tangem cards — custody decided, `ADR-0006` D2, 2026-08-26):**
   * Holds `resolveDispute`, `setVerdictSigner`, and `transferOwnership`.
-  * Key 1: Aaron Clifft (Primary Operational / Ledger).
-  * Key 2: Technical Succession Trustee / Secondary Cold Custody.
-  * Key 3: Estate / Legal Succession Escrow.
+  * Slot 1: Aaron (daily driver). Slot 2: Aaron, secured — **a different building from slot 1**.
+  * Slot 3: Family member A. Slot 4: Family member B. Slots 3–4 are transitional (`ADR-0006` D11).
+  * *Key independence (`ADR-0006` A2):* each card is initialised on its own — the link step is never run — and verified by reading four distinct addresses off the cards **before distribution**, then on-chain via the Safe's owner set.
+  * *Threshold properties:* the two family keys alone reach quorum (succession without estate discovery); any two of the four reach quorum; Aaron can act alone via his two.
   * *Operational Constraint:* Any invocation of `resolveDispute` must be logged publicly with reasoning in the repository (`ADR-0006` D4).
 * **Verdict Signer (Hot Cloud KMS Key):**
   * Address: `0xa8931097540e69B474013D294d0bA6A2cC853e4b` (`kms-signer-svc`).
@@ -210,7 +211,7 @@ If the Vercel Workload Identity Federation credential path is broken:
 2. **Re-Establish OIDC WIF Bindings:**
    Follow `docs/HSM-Deployer-Checklist.md` Part 2 to link the new hosting runtime OIDC provider to `kms-signer-svc`.
 3. **Emergency Signer Key Rotation:**
-   If the GCP project itself is lost or inaccessible, the 2-of-3 Multisig Owner invokes `setVerdictSigner(NEW_SIGNER_ADDRESS, true)` to authorize a newly provisioned signer without redeploying the escrow contract (`CC-090`).
+   If the GCP project itself is lost or inaccessible, the 2-of-4 Safe Owner invokes `setVerdictSigner(NEW_SIGNER_ADDRESS, true)` to authorize a newly provisioned signer without redeploying the escrow contract (`CC-090`).
 
 ---
 
@@ -267,7 +268,7 @@ This section records open governance gates and explicit residual single points o
 
 | Decision Gate | Status | Required Action / Owner Decision | Impact If Unresolved |
 | :--- | :--- | :--- | :--- |
-| **G1: 2-of-3 Multisig Keyholders** | `OPEN` | Nominate Key 2 (Technical Trustee) and Key 3 (Legal/Estate Trustee). | Owner role remains on single KMS key; dispute override relies on single operator. |
+| **G1: 2-of-4 Safe over four Tangem keys** | `OPEN` (execution) | Key-holder roles and custody are **decided** (`ADR-0006` D2). Remaining: initialise each card independently (never run the link step), read and compare the four addresses before distribution, deploy the Safe, move `CarbonEscrow` ownership to it, and run the two testnet rehearsals — any 2-of-4 signature, plus the family-keys-only succession signature. Checklist: `CC-090`. | Owner role remains on the single KMS key; dispute override relies on a single operator. |
 | **G2: Legal Estate Key Custody** | `OPEN` | Execute estate documentation detailing custody and physical recovery of founder cold keys. | Estate cannot inherit or administer keys it cannot locate. |
 | **G3: ENS Name Registration** | `OPEN` | Register `carboncontractors.eth` and set the initial `url` text record. | Agents must rely on static DNS URLs during failover. |
 | **G4: Off-Vendor DB Export Script** | `OPEN` | Schedule weekly pg_dump cron targeting off-vendor S3/R2 storage for Tier 1 tables. | Vendor outage requires relying on Supabase internal snapshot export. |
@@ -295,10 +296,10 @@ This section records open governance gates and explicit residual single points o
   ├─► [KMS Verdict Signer Lost / Compromised]
   │     ├─► Containment: Follow Key-Compromise-Recovery.md §4
   │     ├─► Normal Flow: Settlement degrades safely to worker pull-claims
-  │     └─► Rotation: 2-of-3 Owner calls setVerdictSigner(NEW_ADDRESS, true)
+  │     └─► Rotation: 2-of-4 Safe Owner calls setVerdictSigner(NEW_ADDRESS, true)
   │
   └─► [Founder Unreachable / Incapacitated]
         ├─► Standard Tasks: Resolve automatically via pull-payments (Runbook §2.1)
         ├─► Disputed Tasks: Resolve to worker via arbitration timeout (Runbook §2.2)
-        └─► Contract Admin: 2-of-3 Trustees execute multisig quorum (Runbook §2.3)
+        └─► Contract Admin: 2-of-4 Safe owners execute multisig quorum (Runbook §2.3)
 ```
