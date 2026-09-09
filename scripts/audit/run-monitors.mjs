@@ -61,6 +61,7 @@
 
 import { spawn } from "node:child_process";
 import { verdictLine } from "./verdict-line.mjs";
+import { classifyResults, runKind, alertBody } from "./alert-classify.mjs";
 import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -358,43 +359,39 @@ async function main() {
     (r) => r.status === "FAIL" || r.status === "MISCONFIG" || r.status === "TRANSIENT",
   );
   const skipped = results.filter((r) => r.status === "SKIP");
-  const wake = failed.filter((r) => r.tier === "wake");
   const green = failed.length === 0 && (!strict || skipped.length === 0);
+
+  // CC-104: classify the run before anything is paged. FAIL/MISCONFIG/TRAN all exit 1 and
+  // all look identical in Actions; the alert body and this log line are where the run's
+  // meaning lives. The classes and their bodies live in alert-classify.mjs, tested.
+  const c = classifyResults(results);
+  const kind = runKind(c, { strict });
 
   console.log("");
   console.log(
     `summary   ${results.filter((r) => r.status === "PASS").length} pass · ${failed.length} fail · ${skipped.length} skip`,
   );
+  console.log(
+    `class     ${kind}` +
+      (kind === "breach"
+        ? ` — ${c.fail.length} invariant violation(s)`
+        : kind === "misconfig"
+          ? ` — ${c.misconfig.length} monitor(s) cannot run; invariants UNCHECKED`
+          : kind === "unchecked"
+            ? ` — transport only; ${c.transient.length} monitor(s) could not look`
+            : " — all invariants verified"),
+  );
 
   // ── Build the alert body ──────────────────────────────────────────────────
   const ctx = runContext();
-  const lines = [];
-  // A drill must never be mistakeable for an incident. If someone fires this to test the
-  // webhook and the message looks identical to a real failure, the next genuine alert is
-  // one someone has already been trained to ignore — which is worse than no alert at all.
-  if (isDrill) {
-    lines.push("🧪 **DRILL — NOT A REAL FAILURE.** Monitor thresholds were overridden by hand.");
-    lines.push(`overrides: ${extraArgs.join(" ")}`);
-  }
-  lines.push(
-    green
-      ? `Carbon Contractors invariant monitors: all clear (${results.length} checked)`
-      : `Carbon Contractors INVARIANT FAILURE — ${failed.length} of ${results.length}${wake.length > 0 ? " (includes a wake-someone-up tier)" : ""}`,
-  );
-  lines.push(`network ${process.env.NEXT_PUBLIC_BASE_NETWORK || "testnet"} · ${started.toISOString()}`);
-  for (const r of results) {
-    lines.push(`${r.status === "PASS" ? "ok" : r.status.toLowerCase()} · ${r.name} · ${r.verdict}`);
-  }
-  if (!green) {
-    lines.push("");
-    lines.push(
-      "First response is to PAUSE NEW TASK CREATION, not to debug (ADR-0003 D4). Tasks already " +
-        "in flight resolve safely on their own clocks; new ones would not. Never pause claims — " +
-        "halting settlement mid-flight strands funds and inverts ADR-0001 D6.",
-    );
-  }
-  if (ctx) lines.push(ctx);
-  const body = lines.join("\n");
+  const body = alertBody(kind, c, {
+    results,
+    started: started.toISOString(),
+    network: process.env.NEXT_PUBLIC_BASE_NETWORK || "testnet",
+    ctx,
+    isDrill,
+    drillArgs: extraArgs,
+  });
 
   // ── Deliver ───────────────────────────────────────────────────────────────
   let deliveryFailed = false;
@@ -458,6 +455,15 @@ async function main() {
   if (deliveryFailed) {
     console.log("Alert delivery failed. Treated as a failure on purpose: an alerting path that");
     console.log("breaks quietly is worse than no alerting, because it is trusted.");
+  }
+  // CC-104: one shade of Actions red, four meanings. This is the human-facing line that
+  // makes the shade decodable without opening the log.
+  if (kind === "unchecked") {
+    console.log("TRANSPORT-ONLY run: no invariant was observed violated, but invariants covered");
+    console.log("by the TRAN monitor(s) are UNVERIFIED for this run — not passing (ADR-0003 D3).");
+  } else if (kind === "misconfig") {
+    console.log("MISCONFIGURED monitor(s): the affected invariants are UNCHECKED, not passing.");
+    console.log("Fix the monitor configuration or env; do not debug the chain.");
   }
   if (failed.length === 0 && skipped.length > 0 && strict) {
     console.log(`FAILED under --strict: ${skipped.length} monitor(s) could not run, so ${skipped.length}`);
