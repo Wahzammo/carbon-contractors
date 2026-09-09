@@ -136,10 +136,19 @@ function validateClosure(id, oldText, newText, fm) {
   if (oldText) {
     const oldFm = parseFrontmatter(oldText) ?? {};
     if (oldFm.updated && oldFm.updated === fm.updated) {
-      problems.push(
-        `\`updated:\` is still ${fm.updated}. CLAUDE.md: "Set status: done, bump updated, ` +
-          `append what was actually done and in which commit."`,
-      );
+      // Same-day create→close is legitimate (CC-105, 2026-09-09: created, remediated and
+      // merged in one session). `updated:` is date-granular, so within one day the bump
+      // the rule asks for is impossible without lying about tomorrow. A ticket whose
+      // created == updated has never lived through another day, so the fresh-look proof
+      // is the closure record itself — the commit/PR reference checked below. Only
+      // tickets that existed across days owe the date a move.
+      const sameDayLifecycle = oldFm.created === oldFm.updated;
+      if (!sameDayLifecycle) {
+        problems.push(
+          `\`updated:\` is still ${fm.updated}. CLAUDE.md: "Set status: done, bump updated, ` +
+            `append what was actually done and in which commit."`,
+        );
+      }
     }
   }
 
