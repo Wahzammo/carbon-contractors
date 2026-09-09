@@ -608,3 +608,55 @@ distributed, because after distribution they are in different buildings and in n
 Related: `CC-091`, `CC-090`, `CC-034`, `CC-039`, `CC-087`, `CC-044`, `CC-056`, `ADR-0001` (D6, D9,
 A1.2), `ADR-0002` (D4, D5, D9), `ADR-0003` (D5), `docs/Key-Compromise-Recovery.md`,
 `docs/funds_control_aml_gating.md`.
+
+## Amendment 3 — 2026-09-09 — the app layer is part of the custody architecture
+
+Amendment 2 established that the custody property is *independent initialisation*. The hardware
+arrived 2026-09-07 and the ceremony ran 2026-09-09. Three findings from the ceremony change the
+operational picture without touching the decision itself — still a 2-of-4 Safe over four
+hardware-isolated keys.
+
+### A3.1 — The official app cannot administer independent cards
+
+The gen-2 Tangem app **refuses to display or sign for any wallet that is not part of a linked backup
+group** — the backup step is not optional in the current flow, and an unlinked single card is
+unreadable in the app that ships with the hardware. Worse, the app's "add a backup card" flow
+offers to **factory-reset any card that already carries a wallet** and then link it as a clone.
+Applied carelessly to this set, that screen converts four independent keys into four copies of one
+key — a hidden 1-of-1 that would read as a 4-owner multisig on any explorer. A2's instruction
+("do not run the link step") stands, and gains a sibling: **never feed these cards to the official
+app's backup flow, ever, funded or not.**
+
+### A3.2 — Reader independence is a standing dependency, named
+
+The census and all signing to date were done through **Megnat** (`v0.1.0-21`), a third-party MIT
+EVM-only signing app for Tangem cards. It is a seven-star, single-maintainer project whose Play
+listing is already delisted; the APK is archived with its SHA-256 on frankenfarm
+(`workspace/tangem/`). This is a custody-critical dependency on a hobby project, and it is named
+here rather than left implicit.
+
+Mitigations, both already practised: (1) **no reader is ever trusted** — every address the app
+displayed was independently checksummed and chain-verified, and every card signature was validated
+against the on-chain owner set by Safe's own transaction service; a lying reader is detectable by
+construction. (2) A **desktop admin rig** (Tangem SDK over PC/SC) is being built as the
+app-independent path. Note for procurement: the ACR122U is end-of-life and heavily counterfeited —
+the correct device is the **ACR1552U from a traceable channel** (Mouser AU / element14), not
+marketplace bundles.
+
+### A3.3 — Access codes are unset, and that gates distribution
+
+Cards initialised outside the official flow have **no access code**. The card's default code
+(`000000`) is a public constant in Tangem's SDK source, so "unset" means **possession is the only
+credential**. Acceptable while the cards are co-located and empty-ish; unacceptable for
+distribution. Codes (distinct per card — a shared code would quietly recouple "independent" keys)
+are a **hard gate on distribution**, to be set via the desktop rig and verified at handoff with one
+confirmation tap per card. Cards also get physically labelled with their address suffix at the
+same time; four visually identical black cards is its own operational hazard.
+
+### A3.4 — Rehearsal results, by reference
+
+The 2026-09-09 Base Sepolia rehearsal (Safe v1.4.1+L2, four card owners, threshold 2, three
+executed transactions on three different pairs, all four keys validated, relayer execution pattern
+proven) is recorded in full in `CC-090`. The succession criterion is now **satisfiable by custody
+assignment**: executed pairs {2,3} and {1,4} both have on-chain evidence; whichever pair is
+designated "family" closes it. Assignment remains open.
