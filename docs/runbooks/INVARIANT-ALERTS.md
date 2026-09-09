@@ -1,7 +1,27 @@
 # Invariant Alert Response Runbooks
 
-**Reference:** `ADR-0003` D4, `CC-085`, `CC-086`  
-**Last Updated:** 2026-08-21  
+**Reference:** `ADR-0003` D4, `CC-085`, `CC-086`, `CC-104`  
+**Last Updated:** 2026-09-09  
+
+---
+
+## 0. Read the alert's class before reaching for the kill switch
+
+Since `CC-104`, every alert states its class in the first line, because one shade of
+Actions red covers four different situations:
+
+| First line says | Class | Meaning | Kill switch? |
+| :-- | :-- | :-- | :-- |
+| `INVARIANT BREACH` | breach | an invariant was **observed violated** | **YES** — §2 |
+| `MONITOR MISCONFIGURED` | misconfig | a monitor cannot run; its invariants are **unchecked** | No — §5 |
+| `UNCHECKED (transport)` | unchecked | monitors ran, could not reach the chain | No — §6 |
+| `all clear` | green | everything verified | No |
+
+The confusion of these classes is not hypothetical: of the 32 failed runs in the 90 days
+to 2026-09-09, **zero were breaches** — most were public-endpoint rate limiting (CC-048)
+and one monitor SKIPping on a missing env var, all of which paged with the §2
+pause-intake text. An alert channel that cries breach for a network blip is an alert
+channel that gets muted before the real one arrives.
 
 ---
 
@@ -108,7 +128,10 @@ Once the root cause is resolved and verified:
    ```bash
    node --env-file-if-exists=.env.local scripts/audit/run-monitors.mjs --no-alert
    ```
-   *Must report `ALL CLEAR (5/5 invariants nominal)`.*
+   *Must report a `class green — all invariants verified` summary line with **zero SKIP**.
+   As of CC-104 the registry schedules 8 monitors; a SKIP means an invariant went
+   unchecked, and resuming intake over an unchecked invariant is the same mistake this
+   runbook exists to prevent.*
 
 2. **Deactivate the Kill Switch:**
    In Vercel Environment Variables:
@@ -122,3 +145,49 @@ Once the root cause is resolved and verified:
      --resume \
      --reason="Investigation concluded. All invariant monitors verified clear."
    ```
+
+---
+
+## 5. MISCONFIGURED — the monitor is broken, not the system
+
+**Alert shape:** `MONITOR MISCONFIGURED — N of M could not run correctly. This is not an
+invariant verdict.`
+
+A `CONF` result means the check itself failed structurally: missing env, wrong chainId on
+an endpoint, an out-of-bounds contract read after a redeploy. The invariant it covers is
+**unchecked**, which is not passing (ADR-0003 D3) — but nothing was observed wrong.
+
+1. Read the verdict line — it names the env var or the read that failed.
+2. Historical example: `Position 415 is out of bounds` on `verify-unclaimed`,
+   2026-08-28→29 — the CC-082 redeploy moved the contract; fixed by re-deriving
+   `ESCROW_DEPLOY_BLOCK` (CC-070). Current example: `verify-eas-schema` SKIPping on
+   missing `EAS_SCHEMA_REGISTRY_ADDRESS`, fixed in CC-104 by wiring the env var.
+3. Fix the configuration (workflow env block, repo secrets, or deploy block), never the
+   contract, and re-run §4 step 1.
+4. Do NOT engage the kill switch for this class unless the misconfig has persisted across
+   multiple runs — a monitor that cannot run is a coverage gap, not an incident.
+
+---
+
+## 6. UNCHECKED (transport) — the monitors could not look
+
+**Alert shape:** `N of M UNCHECKED (transport) — no invariant was observed violated.`
+
+A `TRAN` result means the monitor exhausted its RPC retries (rate limiting, 429s, socket
+errors). This is infrastructure weather, not a breach, and a single occurrence requires
+**no action at all** — the next hourly run re-verifies from scratch (the runner is
+stateless by design).
+
+When it is NOT weather:
+
+1. **Repeating across consecutive runs** — the alert body says so; sustained TRAN means
+   the RPC path itself is degraded. Check whether `BASE_SEPOLIA_RPC_URL` is set as a repo
+   secret; without it every run uses the public rate-limited endpoint (CC-048), which is
+   exactly what produced the 2026-09-08 cluster. A dedicated endpoint (Alchemy /
+   QuickNode / Infura free tier) removes the whole class.
+2. **Sustained beyond a few hours** — treat the TRAN-covered invariants as unverified and
+   weigh pausing intake per §2. An unmonitored money path is not a steady state; the
+   decision point is hours, not minutes, because the monitors are stateless and the next
+   green run restores full verification.
+3. **All monitors TRAN simultaneously** — likely a chain-wide or provider-wide event;
+   check a block explorer before touching anything.
